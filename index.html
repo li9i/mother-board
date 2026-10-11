@@ -917,14 +917,20 @@
     border-top: 1px solid var(--gray-200);
   }
   .ctext ul, .ctext ol { padding-left: 18px; position: relative; }
-  .ctext li.lifted {
-    background: color-mix(in srgb, var(--drop, var(--gray-500)) 16%,
-      transparent);
-    border-radius: 4px;
+  .ctext li { position: relative; }
+  .ctext .grip {
+    position: absolute;
+    left: -29px;
+    top: 3px;
+    display: flex;
+    color: var(--gray-500);
+    opacity: 0;
   }
+  .ctext .grip:hover { color: var(--slate); }
+  .ctext .grip svg { width: 12px; height: 12px; stroke-width: 3.5; }
+  .ctext li:hover:not(:has(li:hover)) > .grip { opacity: 1; }
   .ctext li.moving { opacity: .4; }
   .ctext .dropline { left: 0; right: 0; }
-  body.lifting { user-select: none; }
   .ctext li::marker { color: var(--gray-600); }
   .ctext li.task {
     list-style: none;
@@ -1456,8 +1462,6 @@
   var UNDOS = 'personal.undo.v1.';
   var MY_UNDO = UNDOS + uid();
   var UNDO_TIME = 6000;
-  var HOLD_TIME = 400;
-  var HOLD_SLACK = 4;
   var ATTACH = 'Attach a file';
   var SHOWN = /^(image\/(?!svg)|audio\/|video\/|application\/pdf$|text\/plain$)/;
   var IMAGE = /^image\//;
@@ -1495,6 +1499,8 @@
     tick: 'M20 6L9 17l-5-5',
     board: 'M3.5 4.5h17v15h-17Z M8 4.5v15 M12 4.5v15 M16 4.5v15',
     chev: 'M9 6l6 6-6 6',
+    grip: 'M9.5 5h.01 M9.5 12h.01 M9.5 19h.01 M14.5 5h.01 M14.5 12h.01 '
+       + 'M14.5 19h.01',
     clip: 'M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57'
        + 'A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48',
     deck: 'M4 10h16v10H4Z M6 6.5h12 M8 3h8',
@@ -3199,9 +3205,12 @@
         item.blocks.forEach(function (sub) {
           what.appendChild(makeBlock(sub, owner));
         });
-        li.addEventListener('mousedown', function (e) {
-          holdItem(e, li, b, at, owner);
+        var grip = el('span', 'grip');
+        grip.appendChild(icon('grip'));
+        grip.addEventListener('mousedown', function (e) {
+          liftItem(e, li, b, at, owner);
         });
+        li.appendChild(grip);
         list.appendChild(li);
       });
       return list;
@@ -3257,11 +3266,6 @@
     commit();
   }
 
-  function cancelHold() {
-    clearTimeout(lift.timer);
-    lift = null;
-  }
-
   function dragLift(y) {
     var list = lift.li.parentNode;
     lift.li.classList.add('moving');
@@ -3273,24 +3277,16 @@
   function dropLift() {
     var held = lift;
     lift = null;
-    held.li.classList.remove('lifted', 'moving');
-    document.body.classList.remove('lifting');
+    held.li.classList.remove('moving');
     hideDropline();
-    swallowClick();
     if (held.to !== held.at) {
       moveListItem(held.owner, held.list, held.at, held.to);
     }
   }
 
-  function holdItem(e, li, list, at, owner) {
-    if (e.target.closest('li') !== li) return;
-    lift = { li: li, list: list, at: at, to: at, owner: owner,
-      x: e.clientX, y: e.clientY, up: false,
-      timer: setTimeout(function () {
-        lift.up = true;
-        li.classList.add('lifted');
-        document.body.classList.add('lifting');
-      }, HOLD_TIME) };
+  function liftItem(e, li, list, at, owner) {
+    e.preventDefault();
+    lift = { li: li, list: list, at: at, to: at, owner: owner };
   }
 
   function moveListItem(owner, list, from, to) {
@@ -3318,35 +3314,12 @@
       + bare.replace(/\d+/, number);
   }
 
-  function swallowClick() {
-    function swallow(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    window.addEventListener('click', swallow, true);
-    setTimeout(function () {
-      window.removeEventListener('click', swallow, true);
-    });
-  }
-
   document.addEventListener('mousemove', function (e) {
-    if (!lift) return;
-    if (lift.up) dragLift(e.clientY);
-    else if (Math.hypot(e.clientX - lift.x, e.clientY - lift.y) > HOLD_SLACK) {
-      cancelHold();
-    }
+    if (lift) dragLift(e.clientY);
   });
   document.addEventListener('mouseup', function () {
-    if (!lift) return;
-    if (lift.up) dropLift();
-    else cancelHold();
+    if (lift) dropLift();
   });
-  document.addEventListener('dragstart', function (e) {
-    if (!lift) return;
-    if (!lift.up) return cancelHold();
-    e.preventDefault();
-    e.stopPropagation();
-  }, true);
 
   function renderText(el, owner) {
     el.textContent = '';
