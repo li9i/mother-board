@@ -2309,7 +2309,7 @@
     return button;
   }
 
-  function makeMenuButton(card, actions, cap) {
+  function makeMenuButton(card, actions) {
     var button = iconBtn('≡', 'actions', 'menubtn');
     button.setAttribute('aria-haspopup', 'true');
     button.setAttribute('aria-expanded', 'false');
@@ -2317,12 +2317,12 @@
       e.stopPropagation();
       var mine = menuOwner === button;
       closeMenu();
-      if (!mine) openMenu(card, button, actions, cap);
+      if (!mine) openMenu(card, button, actions);
     });
     return button;
   }
 
-  function openMenu(card, button, actions, cap) {
+  function openMenu(card, button, actions) {
     menu.innerHTML = '';
     actions.forEach(function (a) {
       var row = textBtn(a.cls);
@@ -2335,8 +2335,8 @@
         a.onClick();
       });
       menu.appendChild(row);
+      if (a.cap) menu.appendChild(el('div', 'cap', a.cap));
     });
-    if (cap) menu.appendChild(el('div', 'cap', cap));
     menuOwner = button;
     button.setAttribute('aria-expanded', 'true');
     if (card) card.classList.add('menuopen');
@@ -2423,7 +2423,7 @@
         function () { pickFiles(item); }));
     }
     if (spec.buttons.length) {
-      actions.appendChild(makeMenuButton(card, spec.buttons, spec.cap));
+      actions.appendChild(makeMenuButton(card, spec.buttons));
     }
     bot.appendChild(actions);
 
@@ -2808,7 +2808,9 @@
       { icon: 'down', title: 'Download this card',
         onClick: function () { exportCard(card.id); } },
       { icon: 'mail', title: 'Send this card by Gmail',
-        onClick: function () { mailCard(card.id); } }
+        onClick: function () { mailCard(card.id); },
+        cap: 'Gmail opens with the card downloaded.'
+          + ' Drag the file onto the message.' }
     ];
     if (!deck) {
       if (!card.board) {
@@ -2834,9 +2836,7 @@
         ? fillCode(el('div', 'board-title'), cardTitle(card)) : null,
       hideFiles: card.board && !deck,
       attached: attached,
-      buttons: buttons,
-      cap: 'Gmail opens with the card downloaded.'
-        + ' Drag the file onto the message.'
+      buttons: buttons
     });
     if (card.board && !deck) {
       item.classList.add('inner');
@@ -3690,8 +3690,10 @@
     openMenu(null, exportBtn, [
       { icon: 'down', title: 'Download the board',
         onClick: function () { download('personal-board', here()); } },
-      { icon: 'mail', title: 'Send the board by Gmail', onClick: mailBoard }
-    ], 'Gmail opens with the board downloaded. Drag the file onto the message.');
+      { icon: 'mail', title: 'Send the board by Gmail', onClick: mailBoard,
+        cap: 'Gmail opens with the board downloaded.'
+          + ' Drag the file onto the message.' }
+    ]);
   });
 
   function importBoard(parsed, blobs, entries) {

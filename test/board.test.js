@@ -914,3 +914,23 @@ test('a clean-up in another tab keeps the files of a pending undo',
       await browser.close();
     }
   });
+
+function menuRows() {
+  return Array.from(document.querySelector('[role="menu"]').children,
+    (row) => row.textContent.trim());
+}
+
+test('the card menu puts the gmail note under its row and delete last',
+  async () => {
+    const rows = await inPage(async (page) => {
+      await seed(page, STORE, oneNote([]));
+      await page.go();
+      await page.run('document.querySelector(\'' + cardOf('a')
+        + ' .menubtn\').click()');
+      return page.run(call(menuRows));
+    });
+
+    assert.deepStrictEqual(rows.slice(-3), ['Send this card by Gmail',
+      'Gmail opens with the card downloaded. Drag the file onto the message.',
+      'Delete']);
+  });
