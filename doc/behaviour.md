@@ -4,7 +4,7 @@ The full behaviour of the board. The README keeps the short version.
 
 ## Cards
 
-**+ add** at the top of a column writes a new card, above the rest of the stack. Ctrl+Enter saves the card. Enter makes a new line. Escape cancels.
+**+ add to backlog**, or the same button at the top of another column, writes a new card, above the rest of the stack. Ctrl+Enter saves the card. Enter makes a new line. Escape cancels.
 
 **burst**, at the end of the row inside the box, decides what a saved card leaves behind. Off, the box closes once the card is in. On, it stays open and empty, ready for the next one. The switch is in the box, so it is there only while you are adding. One setting serves every box on the page, including the ones for notes and decks, and the board remembers it. It starts off.
 
@@ -215,7 +215,7 @@ In a board, the names in the heading let you go back to the boards above. While 
 
 ## tips
 
-**tips**, the last hint in the header, opens a window with what the board does and what it reads. It holds two sections so far. The callouts come first: every noun, the mark it draws and the colour it takes, with the nouns that share a colour on one bar. Burst comes below a short rule: the switch as the add box shows it, off and on, next to what each state leaves behind. The window takes no colour from the palette, because tips belong to the board and not to a column. Escape or a click outside closes it.
+**tips**, the button above **Palette** on the right of the header, opens a window with what the board does and what it reads. It holds two sections so far. The callouts come first: every noun, the mark it draws and the colour it takes, with the nouns that share a colour on one bar. Burst comes below a short rule: the switch as the add box shows it, off and on, next to what each state leaves behind. The window takes no colour from the palette, because tips belong to the board and not to a column. Escape or a click outside closes it.
 
 ## Build mark
 
