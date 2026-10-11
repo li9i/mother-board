@@ -31,7 +31,7 @@ Nothing else is a link. A `javascript:` address is not a link. An address inside
 - Inside a line, `**bold**`, `*italic*` and `~~struck through~~` mark the words between them. Bold and italic need asterisks. The board does not read the underscore as a mark, so a name such as `max_speed` stays as it is.
 - At the head of a line, `#` to `######` make a heading, `>` makes a quote, and `-`, `*` or `+` make a list. `1.` or `1)` makes a numbered list, which counts from the first number you write. Three or more of `-`, `*` or `_` alone on a line make a divider across the card.
 - An item nests under the item above it when its line starts at least two spaces, or one tab, further in than that item. Lists nest to any depth, and a numbered list and a bulleted list nest in each other. A line that starts with `>` nests in the same way, as a quote under the words of the item, so a callout can sit under an item too. An indented line that is not an item or a quote joins the item that it sits under, as more of its words. A line that starts with `#` or a fence, with fewer than four spaces before it, still starts its own block and closes the list. So does a line that starts with `>` and is not far enough in to nest.
-- A blank line closes a paragraph, a quote or a list, with all the lists nested in it. The board reads no other Markdown. There are no tables and no images.
+- A blank line closes a paragraph, a quote or a list, with all the lists nested in it. The board reads no other Markdown. There are no tables, and the Markdown mark for a picture is not read. Pictures, below, has the mark that the board reads.
 
 **Callouts**: a quote whose first line is a noun in brackets is a callout. `> [!warning]` opens one, and the lines below it are its text. The head takes the mark and the colour of the noun. Words after the noun on that line become the head instead, so `> [!question] Do we keep the fourth column?` names itself. A word the board does not know is not a callout, and those lines stay the quote that they were.
 
@@ -63,9 +63,9 @@ A blank line inside a block closes nothing. A word after the opening fence names
 
 ## Files
 
-A card or a note can carry files. A file shows as a chip under the text, with its name and its size, such as `arm.png 210 KB`.
+A card or a note can carry files. A file shows as a chip under the text, with its name and its size, such as `arm.png 210 KB`. A picture that the text names shows as a picture instead. Pictures, below, has the rest.
 
-- **Drop** a file from your desktop or file manager on a card or a note. While the file is over the card, a ring goes round the card with the word **attach**. One drop can bring more than one file.
+- **Drop** a file from your desktop or file manager on a card or a note. While the file is over the card, a ring goes round the card with the word **attach**. One drop can bring more than one file. A picture file becomes a picture at the end of the text. Every other file becomes a chip.
 - **Attach a file**, in the menu of a card, opens the file picker. A note has no menu, so the clip next to its bin does the same.
 - A click on a chip opens the file in a new tab if the browser can show it: a picture, a PDF, plain text, audio or video. Every other file downloads under its own name. An SVG picture and an HTML page download too, because in a tab of their own they could run code with access to the board.
 - The cross on a chip removes the file from the card. The toast says `File removed` and offers **Undo**.
@@ -73,6 +73,20 @@ A card or a note can carry files. A file shows as a chip under the text, with it
 - A board card does not show its files. Its notes window shows them. A file that lands on a board card opens that window, so you see where the file went.
 - On a low card, the chips fade with the rest of the card.
 - A delete takes the files of the card with it, and Undo brings them back.
+
+## Pictures
+
+A picture shows inside the text of a card or a note. The text holds a mark with the name of the picture, such as `![[image.png]]`, and the picture shows where the mark is. The picture is a file on the card, so it travels with Export and Import as the other files do.
+
+- **Paste**: copy a picture, for example with **Copy Image** in the browser, and press Ctrl+V in a box where you write text. These are the box for a new card or a new note, the box that a double click opens, and the box for the text of a card in the notes window. The mark goes where the cursor is. The board keeps a copy of the picture, not a link to the web page.
+- **Drop** a picture file from your desktop or file manager on one of these boxes, and the mark goes where you drop it. On a card or a note that is not open for editing, the mark goes at the end of the text, on a line of its own.
+- A picture comes with the text when you save it. Escape discards the pictures that you pasted or dropped since the box opened.
+- A pasted picture has the name `image.png`. A name that the card already has gets a number, such as `image (2).png`.
+- A picture is never wider than the card, and never larger than its own size. A click opens it at full size in a new tab.
+- Take the mark out of the text, and the picture shows as a chip again. The cross on the chip removes the file, with Undo. Write the mark of a chip into the text, such as `![[arm.png]]`, and the chip shows as a picture.
+- A mark that names no file on the card stays as the characters you typed.
+- **Attach a file** attaches a picture as a chip. Pictures that were on cards before this change stay chips until you write their mark.
+- A board card shows only its name, so its pictures show in its notes window.
 
 The window shows all of its notes at once. It becomes as tall as the notes need, and the page behind it scrolls when the window is taller than the screen. Only the window that opens against a card, for an edit of the card text, keeps its notes in a box that scrolls. The window uses the colour of the column that holds the card. Escape or a click outside closes the window. A click counts as outside only when it starts and ends there, so a selection dragged out of the text leaves the window open.
 
@@ -85,7 +99,7 @@ The window shows all of its notes at once. It becomes as tall as the notes need,
 A card in Backlog is **normal** or **low**, and only Backlog has the two. Backlog fills faster than it empties and not everything in it is next, so low is where the rest of it waits. A card is written normal, and the low ones gather at the foot of the column.
 
 - The mark after the date says which, and a press on it turns the card over. The mark is a sun, a ring with eight spokes around it. On a normal card it is in the colour of the column. On a low one it is grey. The colour is the whole of the difference. There is no menu row for this: the mark is the whole of it.
-- A low card is drawn flat, on the colour of the column, and everything written on it fades most of the way towards the card. Words, code chips, fenced blocks, callouts, list markers, rules, tick boxes, the date and the note count all fade together, so the card recedes as one thing. The mark, the menu button and the **board** tab of a board card do not fade, because they are how you act on the card. It is put off, not gone.
+- A low card is drawn flat, on the colour of the column, and everything written on it fades most of the way towards the card. Words, code chips, fenced blocks, callouts, list markers, rules, tick boxes, pictures, the date and the note count all fade together, so the card recedes as one thing. The mark, the menu button and the **board** tab of a board card do not fade, because they are how you act on the card. It is put off, not gone.
 - The mark of a low card stays while the pointer is away, because that is why the card is at the foot of the column. On a normal card the mark appears when the pointer is on the card, the way **add note** does. On a screen with no pointer, every card shows its mark.
 - Making a card low sends it to the head of the low cards, and making it normal again puts it at the foot of the ones above. A card cannot be pinned and low at once, so making it low takes the pin off, and pinning it brings it up. A pinned card shows the pin and no mark.
 - A drag moves a card and never changes its level, except into or out of a deck. A card that joins a deck loses its level, and a card taken out of a low deck arrives normal. The three groups keep their order, so a card stops at the line its own group ends at, and so does the line that shows where it lands.

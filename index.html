@@ -970,6 +970,13 @@
     height: 11px;
     stroke-width: 3.5;
   }
+  .ctext img.pic {
+    display: block;
+    max-width: 100%;
+    border-radius: 4px;
+    margin: 4px 0;
+    cursor: zoom-in;
+  }
   .ctext pre {
     font-family: var(--mono);
     font-size: 12px;
@@ -1453,6 +1460,8 @@
   var HOLD_SLACK = 4;
   var ATTACH = 'Attach a file';
   var SHOWN = /^(image\/(?!svg)|audio\/|video\/|application\/pdf$|text\/plain$)/;
+  var IMAGE = /^image\//;
+  var PICTURE = /!\[\[([^\[\]\n]+)\]\]/;
   var MOTHER = 'Mother Board';
   var GMAIL = 'https://mail.google.com/mail/?view=cm&fs=1';
 
@@ -1652,7 +1661,7 @@
   function carry() {
     if (lsGet(STORE) != null || readCarried(STORE, OLD_STORES) == null) return;
     var sign = blank();
-    sign.cols.remember.push(newItem(SIGN));
+    sign.cols.remember.push(newItem(SIGN, []));
     sign.cols.waiting = sign.cols.remember;
     lsSet(OLD_STORES[0], JSON.stringify(sign));
   }
@@ -1735,9 +1744,9 @@
     return into;
   }
 
-  function newItem(text) {
+  function newItem(text, files) {
     return { id: uid(), text: text, created: Date.now(), pinned: false,
-      low: false, notes: [], cards: [], files: [] };
+      low: false, notes: [], cards: [], files: files };
   }
 
   function orderGroups(cols) {
@@ -1842,6 +1851,7 @@
     box.appendChild(row);
     host.appendChild(add);
     host.appendChild(box);
+    takePictures(ta, function () { return []; });
 
     function open() {
       closeComposers();
@@ -1855,6 +1865,7 @@
       box.classList.remove('on');
       add.style.display = '';
       ta.value = '';
+      ta.pictures = [];
     }
 
     function showBurst() {
@@ -1869,7 +1880,7 @@
       var text = ta.value.trim();
       if (!text) { close(); return; }
       ta.value = '';
-      spec.onAdd(text);
+      spec.onAdd(text, keptPictures(ta, text));
       if (burst) { ta.focus(); return; }
       close();
       add.focus();
@@ -1976,8 +1987,8 @@
     makeComposer(addWrap, {
       add: '+ add to ' + c.label.toLowerCase(),
       placeholder: c.prompt,
-      onAdd: function (text) {
-        here().cols[c.key].unshift(newItem(text));
+      onAdd: function (text, files) {
+        here().cols[c.key].unshift(newItem(text, files));
         commit();
       }
     });
@@ -2445,7 +2456,7 @@
     bot.appendChild(actions);
 
     card.appendChild(text);
-    if (item.files.length && !spec.hideFiles) {
+    if (chipsOf(item).length && !spec.hideFiles) {
       card.appendChild(makeFiles(item));
     }
     card.appendChild(bot);
@@ -2466,7 +2477,7 @@
       e.preventDefault();
       e.stopPropagation();
       markNest(null);
-      attach(item, e.dataTransfer.files).then(spec.attached);
+      dropFiles(item, e.dataTransfer.files).then(spec.attached);
     });
 
     card.addEventListener('dblclick', function (e) {
@@ -2483,6 +2494,7 @@
     ta.value = item.text;
     card.draggable = false;
     card.replaceChild(ta, text);
+    takePictures(ta, function () { return item.files; });
 
     function fit() {
       ta.style.height = 'auto';
@@ -2501,7 +2513,11 @@
       card.draggable = true;
       if (keep) {
         var v = ta.value.trim();
-        if (v) { item.text = v; save(); }
+        if (v) {
+          item.text = v;
+          item.files.push.apply(item.files, keptPictures(ta, v));
+          save();
+        }
       }
       redraw();
     }
@@ -2518,14 +2534,105 @@
 
   function attach(item, list) {
     var files = [].slice.call(list);
+    return storeFiles(files, function (f) { return f.name; })
+      .then(function (metas) {
+        item.files.push.apply(item.files, metas);
+        commit();
+      });
+  }
+
+  function chipsOf(item) {
+    return item.files.filter(function (meta) {
+      return !pictured(item, meta);
+    });
+  }
+
+  function dropFiles(item, list) {
+    var files = [].slice.call(list);
+    var taken = takenBy(item.files);
+    var pictures = files.filter(function (f) { return IMAGE.test(f.type); });
+    return storeFiles(pictures, function (f) {
+      return uniqueName(taken, f.name);
+    }).then(function (metas) {
+      item.text += metas.map(function (meta) {
+        return '\n' + markOf(meta.name);
+      }).join('');
+      item.files.push.apply(item.files, metas);
+      return attach(item, files.filter(function (f) {
+        return pictures.indexOf(f) < 0;
+      }));
+    });
+  }
+
+  function keptPictures(ta, text) {
+    var kept = ta.pictures.filter(function (meta) {
+      return text.indexOf(markOf(meta.name)) >= 0;
+    });
+    ta.pictures = [];
+    return kept;
+  }
+
+  function markOf(name) {
+    return '![[' + name + ']]';
+  }
+
+  function takenBy(metas) {
+    var taken = {};
+    metas.forEach(function (meta) { taken[meta.name.toLowerCase()] = true; });
+    return taken;
+  }
+
+  function pictured(item, meta) {
+    return item.text.indexOf(markOf(meta.name)) >= 0;
+  }
+
+  function picturesOf(data) {
+    return [].filter.call(data.items, function (entry) {
+      return entry.kind === 'file' && IMAGE.test(entry.type);
+    });
+  }
+
+  function putPictures(ta, files, owned, from, to) {
+    var taken = takenBy(owned.concat(ta.pictures));
+    storeFiles(files, function (f) { return uniqueName(taken, f.name); })
+      .then(function (metas) {
+        ta.pictures.push.apply(ta.pictures, metas);
+        ta.setRangeText(metas.map(function (meta) {
+          return markOf(meta.name);
+        }).join(''), from, to, 'end');
+        ta.dispatchEvent(new Event('input'));
+      });
+  }
+
+  function storeFiles(files, name) {
     var metas = files.map(function (f) {
-      return { id: uid(), name: f.name, type: f.type, size: f.size };
+      return { id: uid(), name: name(f), type: f.type, size: f.size };
     });
     return Promise.all(metas.map(function (meta, i) {
       return filePut(meta.id, files[i]);
-    })).then(function () {
-      item.files.push.apply(item.files, metas);
-      commit();
+    })).then(function () { return metas; });
+  }
+
+  function takePictures(ta, owned) {
+    ta.pictures = [];
+    function fileOf(entry) { return entry.getAsFile(); }
+    ta.addEventListener('paste', function (e) {
+      var files = picturesOf(e.clipboardData).map(fileOf);
+      if (!files.length) return;
+      e.preventDefault();
+      putPictures(ta, files, owned(), ta.selectionStart, ta.selectionEnd);
+    });
+    ta.addEventListener('dragover', function (e) {
+      if (picturesOf(e.dataTransfer).length) e.preventDefault();
+    });
+    ta.addEventListener('drop', function (e) {
+      var files = picturesOf(e.dataTransfer).map(fileOf);
+      if (!files.length) return;
+      e.preventDefault();
+      e.stopPropagation();
+      markNest(null);
+      var at = document.caretPositionFromPoint(e.clientX, e.clientY).offset;
+      putPictures(ta, files, owned(), at, at);
     });
   }
 
@@ -2542,6 +2649,7 @@
   function makeFiles(item) {
     var row = el('div', 'files');
     item.files.forEach(function (meta, i) {
+      if (pictured(item, meta)) return;
       var chip = el('span', 'file');
       var open = textBtn('file-open');
       open.title = meta.name;
@@ -2951,8 +3059,8 @@
     makeComposer(top, {
       add: '+ add to deck',
       placeholder: 'What else belongs here?',
-      onAdd: function (text) {
-        card.cards.unshift(newItem(text));
+      onAdd: function (text, files) {
+        card.cards.unshift(newItem(text, files));
         deckAdd = { id: card.id, open: burst };
         commit();
       }
@@ -3243,6 +3351,45 @@
   function renderText(el, owner) {
     el.textContent = '';
     fillBlocks(el, blocks(owner.text), owner);
+    showPictures(el, owner);
+  }
+
+  var pictureUrls = {};
+
+  function pictureOf(meta) {
+    var img = el('img', 'pic');
+    img.alt = meta.name;
+    img.draggable = false;
+    img.addEventListener('click', function () { openFile(meta); });
+    urlOf(meta).then(function (url) { img.src = url; });
+    return img;
+  }
+
+  function showPictures(root, owner) {
+    var walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    var found = [];
+    while (walk.nextNode()) {
+      if (PICTURE.test(walk.currentNode.data)) found.push(walk.currentNode);
+    }
+    found.forEach(function (node) {
+      var into = document.createDocumentFragment();
+      node.data.split(PICTURE).forEach(function (bit, i) {
+        var meta = i % 2 ? pick(owner.files, function (f) {
+          return f.name === bit;
+        }) : null;
+        into.appendChild(meta ? pictureOf(meta)
+          : document.createTextNode(i % 2 ? markOf(bit) : bit));
+      });
+      node.parentNode.replaceChild(into, node);
+    });
+  }
+
+  function urlOf(meta) {
+    pictureUrls[meta.id] = pictureUrls[meta.id]
+      || fileGet(meta.id).then(function (blob) {
+        return URL.createObjectURL(blob);
+      });
+    return pictureUrls[meta.id];
   }
 
   function fillCode(node, s) {
@@ -3287,6 +3434,7 @@
   var openCardId = null;
 
   notesWhat.parentNode.appendChild(whatEdit);
+  takePictures(whatEdit, function () { return find(openCardId).card.files; });
   var notesFiles = el('div');
   notesWhat.parentNode.appendChild(notesFiles);
 
@@ -3294,10 +3442,10 @@
     add: '+ add a note',
     placeholder: 'What is worth remembering?',
     inner: true,
-    onAdd: function (text) {
+    onAdd: function (text, files) {
       var list = notesList();
       if (!list) return;
-      list.push(newItem(text));
+      list.push(newItem(text, files));
       commit();
     }
   });
@@ -3312,6 +3460,7 @@
     if (!found || editingWhat) return;
     editingWhat = true;
     whatEdit.value = found.card.text;
+    whatEdit.pictures = [];
     notesWhat.style.display = 'none';
     whatEdit.classList.add('on');
     fitWhat();
@@ -3334,6 +3483,8 @@
     var text = whatEdit.value.trim();
     if (keep && found && text && text !== found.card.text) {
       found.card.text = text;
+      found.card.files.push.apply(found.card.files,
+        keptPictures(whatEdit, text));
       commit();
       return;
     }
@@ -3409,7 +3560,9 @@
     document.getElementById('notesCol').textContent = colOf(found.col).label;
     renderText(notesWhat, found.card);
     notesFiles.textContent = '';
-    if (found.card.files.length) notesFiles.appendChild(makeFiles(found.card));
+    if (chipsOf(found.card).length) {
+      notesFiles.appendChild(makeFiles(found.card));
+    }
     document.getElementById('notesCount').textContent = found.card.notes.length;
     fillBody(notesBody, found.card.notes, 'no notes yet', makeNote);
   }
@@ -3679,6 +3832,12 @@
     return out;
   }
 
+  function uniqueName(taken, name) {
+    var dot = name.lastIndexOf('.');
+    if (dot <= 0) dot = name.length;
+    return unique(taken, name.slice(0, dot), name.slice(dot));
+  }
+
   function unpack(blobs, entries) {
     return Promise.all(Object.keys(blobs).map(function (id) {
       var got = entries ? Promise.resolve(entries[blobs[id]])
@@ -3752,11 +3911,7 @@
       var folder = unique(folders, safeName(cardTitle(item)), '');
       var names = {};
       item.files.forEach(function (meta) {
-        var name = safeName(meta.name);
-        var dot = name.lastIndexOf('.');
-        if (dot <= 0) dot = name.length;
-        var path = folder + '/'
-          + unique(names, name.slice(0, dot), name.slice(dot));
+        var path = folder + '/' + uniqueName(names, safeName(meta.name));
         blobs[meta.id] = path;
         files.push({ path: path, id: meta.id });
       });

@@ -1081,3 +1081,283 @@ test('the lists in the notes window move as they do on a card',
       .join('\n'));
     assert.strictEqual(seen.note, '- blue\n- red\n- green');
   });
+
+const PIC = { width: 3, height: 2 };
+const WHAT_EDIT = '#notes textarea.notes-edit';
+const PIC_SHOWN = PIC.width + 'x' + PIC.height;
+
+async function ready(files, size) {
+  const png = async (name) => {
+    const canvas = new OffscreenCanvas(size.width, size.height);
+    canvas.getContext('2d').fillRect(0, 0, size.width, size.height);
+    return new File([await canvas.convertToBlob()], name,
+      { type: 'image/png' });
+  };
+  window.made = await Promise.all(files.map((f) => typeof f === 'string'
+    ? png(f) : new File([f[1]], f[0], { type: f[2] })));
+}
+
+function pasteMade(selector) {
+  const clipboardData = new DataTransfer();
+  window.made.forEach((file) => clipboardData.items.add(file));
+  document.querySelector(selector).dispatchEvent(new ClipboardEvent('paste',
+    { bubbles: true, cancelable: true, clipboardData }));
+}
+
+function dropMade(selector, corner) {
+  const target = document.querySelector(selector);
+  const box = target.getBoundingClientRect();
+  const style = getComputedStyle(target);
+  const x = corner ? box.left + parseFloat(style.paddingLeft) + 1
+    : box.left + box.width / 2;
+  const y = corner ? box.top + parseFloat(style.paddingTop) + 1
+    : box.top + box.height / 2;
+  const dataTransfer = new DataTransfer();
+  window.made.forEach((file) => dataTransfer.items.add(file));
+  const at = { bubbles: true, cancelable: true, clientX: x, clientY: y,
+    dataTransfer };
+  const into = document.elementFromPoint(x, y);
+  ['dragenter', 'dragover', 'drop'].forEach((type) =>
+    into.dispatchEvent(new DragEvent(type, at)));
+}
+
+function picturesIn(selector) {
+  return Array.from(document.querySelectorAll(selector + ' img'),
+    (img) => img.naturalWidth + 'x' + img.naturalHeight);
+}
+
+function keyIn(selector, key, ctrlKey) {
+  document.querySelector(selector).dispatchEvent(new KeyboardEvent(
+    'keydown', { key, ctrlKey, bubbles: true, cancelable: true }));
+}
+
+function valueOf(selector) {
+  return document.querySelector(selector).value;
+}
+
+function setValue(selector, value) {
+  const box = document.querySelector(selector);
+  box.value = value;
+  box.setSelectionRange(value.length, value.length);
+}
+
+function clickButton(words) {
+  Array.from(document.querySelectorAll('button'))
+    .find((b) => b.checkVisibility() && b.textContent.trim() === words)
+    .click();
+}
+
+function editCard(id) {
+  document.querySelector('.card[data-id="' + id + '"] .ctext')
+    .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+}
+
+async function shownIn(page, selector, count) {
+  return until(async () => {
+    const shown = await page.run(call(picturesIn, selector));
+    return shown.length === count && !shown.includes('0x0') && shown;
+  });
+}
+
+async function pasted(page, selector, files) {
+  await page.run(call(ready, files, PIC));
+  const before = await page.run(call(valueOf, selector));
+  await page.run(call(pasteMade, selector));
+  return until(async () => {
+    const now = await page.run(call(valueOf, selector));
+    return now !== before && now;
+  });
+}
+
+function names(item) {
+  return item.files.map((f) => f.name);
+}
+
+test('a picture pasted in the edit box shows in the card text',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, withLists('Shoes', COLOURS));
+      await page.go();
+      const box = WHAT_EDIT;
+      await page.run(call(editCard, 'a'));
+      await pasted(page, box, ['image.png']);
+      await page.run('document.querySelector(' + JSON.stringify(box)
+        + ').setSelectionRange(0, 0)');
+      const out = { typed: await pasted(page, box, ['image.png']) };
+      await page.run(call(keyIn, box, 'Enter', true));
+      const a = cardA(await stored(page, STORE));
+      out.text = a.text;
+      out.names = names(a);
+      out.shown = await shownIn(page, cardOf('a'), 2);
+      out.words = await page.run('document.querySelector(\''
+        + cardOf('a') + '\').innerText');
+      return out;
+    });
+
+    const text = '![[image (2).png]]Shoes![[image.png]]';
+    assert.strictEqual(seen.typed, text);
+    assert.strictEqual(seen.text, text);
+    assert.deepStrictEqual(seen.names, ['image.png', 'image (2).png']);
+    assert.deepStrictEqual(seen.shown, [PIC_SHOWN, PIC_SHOWN]);
+    assert.doesNotMatch(seen.words, /image|!\[\[/);
+  });
+
+test('a picture dropped on a card or in its edit box lands in the text',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, withLists('Shoes', COLOURS));
+      await page.go();
+      await page.run(call(ready, ['photo.png', HELLO], PIC));
+      await page.run(call(dropMade, cardOf('a') + ' .ctext', false));
+      await until(async () => (cardA(await stored(page, STORE)).files
+        || []).length === 2);
+      const out = { dropped: cardA(await stored(page, STORE)) };
+      out.shown = await shownIn(page, cardOf('a'), 1);
+      out.words = await page.run('document.querySelector(\''
+        + cardOf('a') + '\').innerText');
+      const box = WHAT_EDIT;
+      await page.run(call(editCard, 'a'));
+      await page.run(call(ready, ['photo.png'], PIC));
+      const before = await page.run(call(valueOf, box));
+      await page.run(call(dropMade, box, true));
+      out.typed = await until(async () => {
+        const now = await page.run(call(valueOf, box));
+        return now !== before && now;
+      });
+      await page.run(call(keyIn, box, 'Enter', true));
+      out.saved = cardA(await stored(page, STORE)).text;
+      out.shownAfter = await shownIn(page, cardOf('a'), 2);
+      return out;
+    });
+
+    assert.strictEqual(seen.dropped.text, 'Shoes\n![[photo.png]]');
+    assert.deepStrictEqual(names(seen.dropped), ['photo.png', 'hello.txt']);
+    assert.deepStrictEqual(seen.shown, [PIC_SHOWN]);
+    assert.match(seen.words, /hello\.txt/);
+    assert.doesNotMatch(seen.words, /photo\.png/);
+    const text = '![[photo (2).png]]Shoes\n![[photo.png]]';
+    assert.strictEqual(seen.typed, text);
+    assert.strictEqual(seen.saved, text);
+    assert.deepStrictEqual(seen.shownAfter, [PIC_SHOWN, PIC_SHOWN]);
+  });
+
+test('a picture pasted in the box for a new card or note comes with it',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, withLists('Shoes', COLOURS));
+      await page.go();
+      const add = '#board .composer.on textarea';
+      const backlog = async () => (await stored(page, STORE)).cols.backlog;
+      await page.run(call(clickButton, '+ add to backlog'));
+      await page.run(call(setValue, add, 'Left behind'));
+      await pasted(page, add, ['image.png']);
+      await page.run(call(keyIn, add, 'Escape'));
+      await page.run(call(clickButton, '+ add to backlog'));
+      await page.run(call(setValue, add, 'New card'));
+      await pasted(page, add, ['image.png']);
+      await page.run(call(keyIn, add, 'Enter', true));
+      const out = { card: (await backlog())[0] };
+      out.shown = await shownIn(page, cardOf(out.card.id), 1);
+      await page.run(call(clickButton, '+ add to backlog'));
+      await page.run(call(setValue, add, 'Plain'));
+      await page.run(call(keyIn, add, 'Enter', true));
+      out.plain = (await backlog())[0];
+      out.count = (await backlog()).length;
+      await page.run('document.querySelector(\'' + cardOf('a')
+        + ' .notemark\').click()');
+      const note = '#notes .composer.on textarea';
+      await page.run(call(clickButton, '+ add a note'));
+      await page.run(call(setValue, note, 'New note'));
+      await pasted(page, note, ['image.png']);
+      await page.run(call(keyIn, note, 'Enter', true));
+      out.note = cardA(await stored(page, STORE)).notes[1];
+      out.noteShown = await shownIn(page, '#notes ' + cardOf(out.note.id),
+        1);
+      const edit = '#notes ' + cardOf('n') + ' textarea';
+      await page.run('document.querySelector(\'#notes ' + cardOf('n')
+        + ' .ctext\').dispatchEvent(new MouseEvent("dblclick",'
+        + ' { bubbles: true }))');
+      await pasted(page, edit, ['image.png']);
+      await page.run(call(keyIn, edit, 'Enter', true));
+      out.edited = noteN(await stored(page, STORE));
+      out.editedShown = await shownIn(page, '#notes ' + cardOf('n'), 1);
+      return out;
+    });
+
+    assert.strictEqual(seen.card.text, 'New card![[image.png]]');
+    assert.deepStrictEqual(names(seen.card), ['image.png']);
+    assert.deepStrictEqual(seen.shown, [PIC_SHOWN]);
+    assert.strictEqual(seen.plain.text, 'Plain');
+    assert.deepStrictEqual(names(seen.plain), []);
+    assert.strictEqual(seen.count, 3);
+    assert.strictEqual(seen.note.text, 'New note![[image.png]]');
+    assert.deepStrictEqual(names(seen.note), ['image.png']);
+    assert.deepStrictEqual(seen.noteShown, [PIC_SHOWN]);
+    assert.strictEqual(seen.edited.text, COLOURS + '![[image.png]]');
+    assert.deepStrictEqual(names(seen.edited), ['image.png']);
+    assert.deepStrictEqual(seen.editedShown, [PIC_SHOWN]);
+  });
+
+async function madeBytes() {
+  const bytes = new Uint8Array(await window.made[0].arrayBuffer());
+  return btoa(String.fromCharCode(...bytes));
+}
+
+function spyOpen() {
+  window.open = (url) => { window.opened = url; return {}; };
+}
+
+async function openedType() {
+  return (await (await fetch(window.opened)).blob()).type;
+}
+
+test('an image chip shows as a picture only while the text names it',
+  async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'files-'));
+    const old = path.join(dir, 'old.png');
+    try {
+      const seen = await inPage(async (page) => {
+        await page.run(call(ready, ['old.png'], PIC));
+        fs.writeFileSync(old,
+          Buffer.from(await page.run(call(madeBytes)), 'base64'));
+        await seed(page, STORE, withLists('Shoes', COLOURS));
+        await page.go();
+        const words = () => page.run('document.querySelector(\''
+          + cardOf('a') + '\').innerText');
+        const box = WHAT_EDIT;
+        const write = async (text) => {
+          await page.run(call(editCard, 'a'));
+          await page.run(call(setValue, box, text));
+          await page.run(call(keyIn, box, 'Enter', true));
+        };
+        await page.run('document.querySelector(\'' + cardOf('a')
+          + ' .menubtn\').click()');
+        await page.chosen(call(choose, ATTACH), [old]);
+        await filesOf(page, cardA);
+        const out = { chip: await words() };
+        out.chipShown = await page.run(call(picturesIn, cardOf('a')));
+        await write('Shoes\n![[old.png]]');
+        out.shown = await shownIn(page, cardOf('a'), 1);
+        out.picture = await words();
+        await page.run(call(spyOpen));
+        await page.run('document.querySelector(\'' + cardOf('a')
+          + ' img\').click()');
+        await until(() => page.run('!!window.opened'));
+        out.opened = await page.run(call(openedType));
+        await write('Shoes');
+        out.back = await words();
+        out.names = names(cardA(await stored(page, STORE)));
+        return out;
+      });
+
+      assert.match(seen.chip, /old\.png/);
+      assert.deepStrictEqual(seen.chipShown, []);
+      assert.deepStrictEqual(seen.shown, [PIC_SHOWN]);
+      assert.doesNotMatch(seen.picture, /old\.png/);
+      assert.strictEqual(seen.opened, 'image/png');
+      assert.match(seen.back, /old\.png/);
+      assert.deepStrictEqual(seen.names, ['old.png']);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
