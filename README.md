@@ -1,52 +1,134 @@
 # Personal board
 
-A personal board with four columns: Remember, Backlog, Now, Accomplished. The board is one HTML file. There is no build step, no dependency and no server. Open `index.html` in a browser. A `file://` address works.
+This is a board for one person in one HTML file, with the four columns Remember, Backlog, Now and Accomplished.
 
-![The board with cards in each column. A pinned card heads Remember, callouts sit in Remember and Backlog, three low cards wait at the foot of Backlog, a deck in Now holds three cards under its head with one done, and the cards show checklists, a nested list, a code chip, a fenced block, a link and a note count](doc/board.png)
+![The board has cards in each column. A pinned card is at the top of Remember, and Remember and Backlog contain callouts. Backlog holds a board card with its band of colours, a checklist with a picture and a card with a file. Two low cards are at the bottom of Backlog. A deck in Now holds three cards below its head, and one of these cards is done. The cards show nested checklists, a code chip, a fenced block and a link.](doc/board.png)
 
-## Use
+## Start
 
-- **+ add** at the top of a column writes a new card. Ctrl+Enter saves, Enter makes a new line, Escape cancels.
-- **A double click** on a card opens it in its own window, ready to edit. That is the one way to edit it.
-- **≡** on a card opens its menu: pin, turn into a board, attach a file, download, send by Gmail, delete. **Delete** is the last row, in red.
-- **The sun** after the date of a card in Backlog says whether the card is normal or low: in the colour of the column on a normal card, in grey on a low one. A press turns it over. Low cards grey out and gather at the foot of the column.
-- **Drag** moves a card within a column or to another column.
-- **The grip** shows to the left of an item of a list when the pointer is on the item. Drag the grip to move the item within its own list. The items nested under it move with it.
-- **Decks** keep cards together under a head card. A drop on the middle of a card asks first, in a small menu. Before you let go, a ring goes round the card with the words **make a deck**. **Create deck** makes a deck. **Place above this card** and **Place below this card** put the dragged card there, and show only where pins and levels let it land. A drop near the edge of a card still moves the card, and shows a line. A deck folds to its head, and its done cards go to its foot, below a line that counts them and folds them away.
-- **Boards** sit inside cards. **Turn into a board**, in the menu of a card, gives the card a board of its own, with the same four columns. The **board** tab on the card steps into that board, and the names in the heading step back out. The top board is the **Mother Board**. Boards nest to any depth, and everything on the page acts on the board you are in. A card that holds a board takes no part in a deck.
-- **Notes** hang off a card and open in a window of their own.
-- **Files** go on a card or a note. Drop a file on it from your desktop, or use **Attach a file** in the menu of a card or the clip on a note. A file shows as a chip with its name and size. A click opens or downloads it, and the cross removes it. Files travel with Export and Import.
-- **Pictures** show inside the text. Press Ctrl+V in a box where you write, for example after **Copy Image** in the browser, or drop a picture file on the box or on a card. The text gets a mark such as `![[image.png]]` where the picture goes.
-- Card text reads inline code, fenced blocks, links, headings, quotes, callouts, nested lists, checkboxes, dividers and pictures.
-- **Palette** changes the colours of Backlog, Now and Accomplished on the board you are in, so each board keeps its own. The colours come from Sanzo Wada's *A Dictionary of Color Combinations*.
-- **Export** writes the board you are in, with every board inside it. It offers two ways out: download the board, or send it by Gmail, which downloads the same file and opens a new message for you to drag the file onto. A card's own menu does the same for one card, with the card's first line and id in the subject. The file is JSON. When the board or the card carries files, it is a zip: the JSON, and a folder for each card and note with its files. The message for a card names its files. **Import** reads a whole board, which replaces the board you are in, or a single card, which joins it, from a JSON file or a zip.
-- **tips**, in the header, shows what the board does and what it reads.
+Open `index.html` in a browser. You can open it from a `file://` address. You do not install or build anything, and the board does not use a server. The board stays in this browser only. To keep a copy, or to move the board to a different machine, use **Export**.
 
-The board is in `localStorage`, under `personal.board.v2`. The files on its cards are in the IndexedDB database `personal.files.v1` of the browser. Export moves both to another machine.
+The line below the heading shows `drag cards between columns · double-click a card to edit · hover for more options`. The **tips** button opens a window about callouts and the **burst** switch.
 
-[doc/behaviour.md](doc/behaviour.md) has the rest.
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#tips).
 
-## Build mark
+## Cards
 
-Under the board is the short hash of the commit this copy of the page came from. The hooks in `hooks/` write it. Turn them on when you clone:
+To write a new card, click **+ add to backlog** or the same button in a different column. Ctrl+Enter saves the card, Enter starts a new line and Escape cancels. When **burst** is on, the box stays open for the next card. Double-click a card to change its text. Drag a card to move it in its column or to a different column.
+
+**≡** on a card opens its menu. The menu holds **Pin to top**, **Turn into a board**, **Attach a file**, **Download this card** and **Send this card by Gmail**. **Delete** is the last item, in red. **Delete** removes the card immediately, and the toast shows an **Undo** button. **clear column** removes all the cards from Accomplished, but first it shows **clear** and **cancel**. To see the accurate time at which you wrote a card, hold the pointer on its date.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#cards).
+
+## Card text
+
+The board shows Markdown in the text of a card: inline code, fenced blocks, links, headings, quotes, callouts, nested lists, checkboxes, dividers and pictures. A quote that starts with a callout word in brackets is a callout, for example `> [!warning]`. **tips** shows all the callout words.
+
+Click an open checkbox to make it done, and click it again to make it open. To move an item in its list, put the pointer on the item. Then drag the grip on the left side of the item.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#what-the-card-text-reads).
+
+## Notes
+
+A card can have notes. The words after the date of a card show the number of notes. Click these words to open the notes window. On a card with no notes, **add note** shows while the pointer is on the card. The window shows all the notes of the card at the same time.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#notes).
+
+## Files
+
+A card or a note can hold files. Drop a file on it from your desktop. You can also use **Attach a file** in the menu of a card, or the clip on a note. A file shows as a chip with its name and its file size, but a picture in the text shows as a picture. When you click the chip, the browser opens the file or downloads it. The cross on the chip removes the file.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#files).
+
+## Pictures
+
+A picture shows in the text of a card or a note. To add a picture, copy it. Then press Ctrl+V in a box where you write. You can also drop a picture file on the box or on a card. The text then gets a mark at the position of the picture, for example `![[image.png]]`. If you remove the mark, the picture shows as a chip again.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#pictures).
+
+## Pins
+
+**Pin to top**, in the menu of a card, holds the card at the top of its column. A pinned card shows a pin before its date, and cards that are not pinned cannot go above it. **Unpin**, in the same menu, removes the pin.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#pins).
+
+## Low cards in Backlog
+
+A card in Backlog has one of two levels, **normal** or **low**. The sun after the date shows the level. On a normal card, the sun shows only while the pointer is on the card. Click the sun to change the level.
+
+Low cards are dim and collect at the bottom of the column. The count at the top of Backlog shows the two levels. For example, `5+3` is five normal cards and three low cards.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#levels).
+
+## Decks
+
+A deck keeps cards together below a head card. If you drop a card on the middle of a different card, a small menu opens. The menu has up to three buttons: **Create deck**, **Place above this card** and **Place below this card**. If you drop the card near the top or bottom edge of a different card, the card moves and the menu does not open.
+
+The arrow before the date of the head folds the deck. A card in a deck is done when it has checkboxes and all of them are done. Done cards go to the bottom of the deck.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#decks).
+
+## Boards
+
+**Turn into a board**, in the menu of a card, gives the card a board with the same four columns. The **board** tab on the card opens that board. Click a name in the heading to go back to that board. The top board is the **Mother Board**.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#boards).
+
+## Palette
+
+**Palette** changes the colours of Backlog, Now and Accomplished on the board that you are in. Each board keeps its palette. If you click the combination of the board again, Backlog and Now interchange their colours. The colours are from Sanzo Wada's *A Dictionary of Color Combinations*.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#palette).
+
+## Export and Import
+
+**Export** opens a menu with two items. **Download the board** writes the board that you are in, with all the boards in it, to a file. The file is JSON, or a zip with the JSON and the files if the board holds files. **Send the board by Gmail** downloads the same file and opens a new message, but it cannot attach the file. Drag the file onto the message. **Import** reads a board, which replaces the board that you are in, or one card, which goes into it.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#export-and-import).
+
+## The Remember column
+
+**Remember** holds cards that are not your tasks, for example a card that a different person must move, or a note for you.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#the-remember-column).
+
+## Hide the head of the page
+
+The small arrow on the left side of the line of counts hides the head of the page. Click the arrow again to show the head. **tips** stays on the line of counts.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#the-head-of-the-page).
+
+## Where the browser keeps your board
+
+The board is in `localStorage`, in the key `personal.board.v2`. The files on its cards are in the IndexedDB database `personal.files.v1`. The two stay in this browser on this machine. With **Export** and **Import**, you can move the board and its files to a different machine.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#storage).
+
+## Development
+
+### Build mark
+
+Below the board is the short hash of the commit of this copy of the page. The hooks in `hooks/` write it. To enable the hooks, clone with this command:
 
 ```bash
 git clone -c core.hooksPath=hooks https://github.com/li9i/personal-board
 ```
 
-In a clone that already exists, `git config core.hooksPath hooks` turns them on, and the mark appears after the next commit, merge or checkout. [doc/behaviour.md](doc/behaviour.md#build-mark) has the rest.
+If you cloned without the hooks, `git config core.hooksPath hooks` enables them. The mark then shows after the next commit, merge or checkout.
 
-## Tests
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#build-mark).
 
-The tests are in `test/`. Run them from the root of the repository:
+### Tests
+
+Run the tests from the root of the repository:
 
 ```bash
 node --test
 ```
 
-They open the page in headless Google Chrome, the `google-chrome` command, with a profile of their own. They delete the profile afterwards, so they do not touch the board in your own browser. You need Node and Google Chrome. There is no package to install, and the tests download nothing. They were run with Node 22.
+Node and Google Chrome, as the `google-chrome` command, are necessary. The tests open the page in headless Chrome with a new profile, and delete the profile at the end. Thus, they do not change the board in your browser. They do not install a package or download data from the internet. They were run with Node 22.
 
-The first test checks that a save keeps the parts of a board that the page does not know. The second checks that the first load moves the board from `personal.board.v1` to `personal.board.v2` and leaves a sign in the old key. The third checks that a board card shows only its name and a count such as `3 of 9 done`, that its tab steps into the board, and that a double click on its name opens the card to edit. The fourth checks that a name in backticks shows as code on its board card and in the heading. The fifth checks that a drop on the middle of a card shows all three buttons, and that each one does what it says. It also checks that Escape leaves the card where it was. The sixth checks that a drop on the head of a deck adds the card to the top of the deck and does not ask. The seventh checks that the two Place buttons show only where pins and levels let the card land directly above or below. The eighth checks that a file dropped on a card or a note shows as a chip with its name and size, and that a board card shows its files only in its notes window. The ninth checks that **Attach a file** in the menu of a card, and the clip on a note, attach a file from the file picker. The tenth checks that a click on a chip opens plain text in a new tab and downloads other files under their own names, and that the cross removes a file and Undo brings it back. The eleventh exports a board and a single card with files as zips, imports each one into a browser that has no files, and opens a file there. The twelfth checks that **Send this card by Gmail** downloads one zip, that the menu of the card says to drag the file onto the message, and that the message names the files and no longer says the file is attached. The thirteenth checks that a zip holds a folder for each card and note that has files, and that a name already in use gets a number. The fourteenth checks that a card or a board with no files still downloads as plain JSON. The fifteenth packs a card zip again with its files compressed and inside one more folder, as another program would, and checks that Import still reads it. The sixteenth checks that opening the page deletes a stored file that no card holds, and keeps the files on cards, on notes, inside boards and in parts of the board that the page does not know. The seventeenth deletes a card in one tab, opens the board in a second tab, and checks that **Undo** in the first tab brings the card back with its file. The eighteenth checks that the menu of a card shows the note about dragging the file right under **Send this card by Gmail**, and **Delete** last. The nineteenth checks that an item of a list, dragged by its grip, moves within its own list with the items nested under it, that a nested item stays under its item, and that the card does not move. The twentieth checks that a moved item leaves the numbers of a numbered list in place, also in a callout. The twenty-first checks that only the item under the pointer shows its grip, that a drag on the words of an item moves the card, and that a click on a box still turns it over. The twenty-second checks that the lists in a note and in the head of the notes window move as they do on a card. The twenty-third checks that a picture pasted in the box for the text of a card goes where the cursor is, shows in the card with no chip, and that a second `image.png` becomes `image (2).png`. The twenty-fourth checks that a picture dropped on a card goes at the end of its text while another file stays a chip, and that a picture dropped in the box goes where it lands. The twenty-fifth checks that a picture pasted in the box for a new card, a new note or the text of a note comes with it, and that Escape discards it. The twenty-sixth checks that an attached picture stays a chip until the text names it, that a click on the picture opens it, and that the chip comes back when the mark goes. The tests check the checksum of each file that they read from a zip. [doc/behaviour.md](doc/behaviour.md#storage) has the rest.
+For a list of the tests and their checks, refer to [doc/tests.md](doc/tests.md).
 
 ## Disclaimer
 

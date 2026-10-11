@@ -61,6 +61,8 @@ A blank line inside a block closes nothing. A word after the opening fence names
 
 **Notes** open in a small window in the middle of the page. The words next to the date of a card open that window. A card with notes gives their count there. A card with no notes shows **add note** while the pointer is on the card. A click there opens the window, with the box for the first note. Notes are cards themselves. The same editing, backticks, links and dates apply to them, and a drag reorders them. They carry a bin of their own, with an Undo.
 
+The window shows all of its notes at once. It becomes as tall as the notes need, and the page behind it scrolls when the window is taller than the screen. Only the window that opens against a card, for an edit of the card text, keeps its notes in a box that scrolls. The window uses the colour of the column that holds the card. Escape or a click outside closes the window. A click counts as outside only when it starts and ends there, so a selection dragged out of the text leaves the window open.
+
 ## Files
 
 A card or a note can carry files. A file shows as a chip under the text, with its name and its size, such as `arm.png 210 KB`. A picture that the text names shows as a picture instead. Pictures, below, has the rest.
@@ -87,8 +89,6 @@ A picture shows inside the text of a card or a note. The text holds a mark with 
 - A mark that names no file on the card stays as the characters you typed.
 - **Attach a file** attaches a picture as a chip. Pictures that were on cards before this change stay chips until you write their mark.
 - A board card shows only its name, so its pictures show in its notes window.
-
-The window shows all of its notes at once. It becomes as tall as the notes need, and the page behind it scrolls when the window is taller than the screen. Only the window that opens against a card, for an edit of the card text, keeps its notes in a box that scrolls. The window uses the colour of the column that holds the card. Escape or a click outside closes the window. A click counts as outside only when it starts and ends there, so a selection dragged out of the text leaves the window open.
 
 ## Pins
 
@@ -204,6 +204,14 @@ The book holds 108 combinations of four colours. 24 of them are here, in eight f
 ## The Remember column
 
 **Remember** holds what you must keep in mind: a card that someone else has to move, and a note to yourself that is not work at all. A hairline separates this column from the other three. No palette gives this column a colour. It uses the page background. Its cards are white and its text is grey.
+
+## The head of the page
+
+The small arrow on the left side of the line of counts hides the head of the page. The line of counts is the line below the header, for example `5 to remember · 4+3 in backlog · 6 going on now · 5 accomplished`. The arrow hides the small label `personal / board`, the heading, the hint line, **Palette**, and the **Import** and **Export** buttons. **tips** does not hide. It moves onto the line of counts.
+
+The arrow points up while the head shows, and down while the head is hidden. When you click it again, the head of the page shows again. The page records your selection in `localStorage`, in the key `personal.fold.v1`.
+
+In a board, the names in the heading let you go back to the boards above. While the head of the page is hidden, use the Back button of the browser, or show the head again.
 
 ## tips
 
