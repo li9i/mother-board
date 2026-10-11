@@ -916,7 +916,15 @@
     border: 0;
     border-top: 1px solid var(--gray-200);
   }
-  .ctext ul, .ctext ol { padding-left: 18px; }
+  .ctext ul, .ctext ol { padding-left: 18px; position: relative; }
+  .ctext li.lifted {
+    background: color-mix(in srgb, var(--drop, var(--gray-500)) 16%,
+      transparent);
+    border-radius: 4px;
+  }
+  .ctext li.moving { opacity: .4; }
+  .ctext .dropline { left: 0; right: 0; }
+  body.lifting { user-select: none; }
   .ctext li::marker { color: var(--gray-600); }
   .ctext li.task {
     list-style: none;
@@ -1441,6 +1449,8 @@
   var UNDOS = 'personal.undo.v1.';
   var MY_UNDO = UNDOS + uid();
   var UNDO_TIME = 6000;
+  var HOLD_TIME = 400;
+  var HOLD_SLACK = 4;
   var ATTACH = 'Attach a file';
   var SHOWN = /^(image\/(?!svg)|audio\/|video\/|application\/pdf$|text\/plain$)/;
   var MOTHER = 'Mother Board';
@@ -1651,6 +1661,7 @@
   var state = load();
   var path = [];
   var drag = null;
+  var lift = null;
   var lastDeleted = null;
   var toastTimer = null;
 
@@ -2121,11 +2132,7 @@
 
   function insertIndex(body, y, flat) {
     var cards = itemsIn(body);
-    var at = cards.length;
-    for (var i = 0; i < cards.length; i++) {
-      var box = cards[i].getBoundingClientRect();
-      if (y < box.top + box.height / 2) { at = i; break; }
-    }
+    var at = slotAt(cards, y);
     if (flat) return at;
     var top = itemsIn(body, '.pinned').length;
     var foot = cards.length - itemsIn(body, '.low').length;
@@ -2134,16 +2141,22 @@
     return Math.min(Math.max(at, top), foot);
   }
 
+  function slotAt(nodes, y) {
+    for (var i = 0; i < nodes.length; i++) {
+      var box = nodes[i].getBoundingClientRect();
+      if (y < box.top + box.height / 2) return i;
+    }
+    return nodes.length;
+  }
+
   var dropline = null;
 
   function hideDropline() {
     if (dropline && dropline.parentNode) dropline.parentNode.removeChild(dropline);
   }
 
-  function showDropline(body, y, flat) {
-    var cards = itemsIn(body);
+  function placeDropline(body, cards, at) {
     if (!cards.length) return hideDropline();
-    var at = insertIndex(body, y, flat);
     var half = (parseFloat(getComputedStyle(body).rowGap) || 0) / 2;
     var mid;
     if (at === 0) {
@@ -2157,6 +2170,10 @@
     if (!dropline) dropline = el('div', 'dropline');
     if (dropline.parentNode !== body) body.appendChild(dropline);
     dropline.style.top = (mid - body.getBoundingClientRect().top + body.scrollTop) + 'px';
+  }
+
+  function showDropline(body, y, flat) {
+    placeDropline(body, itemsIn(body), insertIndex(body, y, flat));
   }
 
   function moveItem(from, to, id, at) {
@@ -2383,7 +2400,7 @@
 
     var text = el('div', 'ctext');
     if (spec.head) text.appendChild(spec.head);
-    else renderText(text, item.text, function (at) { toggleTask(item, at); });
+    else renderText(text, item);
 
     var bot = el('div', 'card-bot');
     if (spec.pinned) {
@@ -2726,6 +2743,7 @@
       if (host >= 0 && (m = QUOTE.exec(line.replace(LEAD, '')))) {
         quoteInto(open.trail[host].item, m[1], off + i);
         open.trail = open.trail.slice(0, host + 1);
+        reach(open.trail, off + i);
         return;
       }
       if ((m = QUOTE.exec(line))) {
@@ -2749,11 +2767,13 @@
         else start(list);
         open.trail = under ? open.trail.slice(0, host + 1) : [];
         open.trail.push({ indent: w, item: item });
+        reach(open.trail, off + i);
         return;
       }
       if (host >= 0 && line.trim()) {
         joinText(open.trail[host].item, line.replace(LEAD, ''));
         open.trail = open.trail.slice(0, host + 1);
+        reach(open.trail, off + i);
         return;
       }
       if (!line.trim()) { open = null; return; }
@@ -2797,6 +2817,10 @@
     var last = item.blocks[item.blocks.length - 1];
     if (last && last.kind === 'quote') last.text += '\n' + s;
     else item.blocks.push({ kind: 'quote', text: s, at: at });
+  }
+
+  function reach(trail, at) {
+    trail.forEach(function (step) { step.item.end = at; });
   }
 
   function makeCard(card, col, deck) {
@@ -3028,10 +3052,10 @@
     return boxes.length > 0 && boxes.every(Boolean);
   }
 
-  function fillBlocks(host, list, onToggle) {
+  function fillBlocks(host, list, owner) {
     var fade = false;
     list.forEach(function (b) {
-      var node = makeBlock(b, onToggle);
+      var node = makeBlock(b, owner);
       if (b.kind === 'list') {
         var mark = lastMark(b.items);
         if (mark !== null) fade = mark;
@@ -3042,7 +3066,7 @@
     });
   }
 
-  function makeBlock(b, onToggle) {
+  function makeBlock(b, owner) {
     if (b.kind === 'rule') return document.createElement('hr');
     if (b.kind === 'code') {
       var pre = document.createElement('pre');
@@ -3054,24 +3078,29 @@
     if (b.kind === 'list') {
       var list = document.createElement(b.ordered ? 'ol' : 'ul');
       if (b.ordered && b.start !== 1) list.start = b.start;
-      b.items.forEach(function (item) {
+      b.items.forEach(function (item, at) {
         var li = document.createElement('li');
         var what = li;
         if (item.done !== null) {
           li.className = item.done ? 'task done' : 'task';
-          li.appendChild(taskBox(item, onToggle));
+          li.appendChild(taskBox(item, owner));
           what = el('div', 'task-what');
           li.appendChild(what);
         }
         fillInline(what, item.text);
-        item.blocks.forEach(function (sub) { what.appendChild(makeBlock(sub, onToggle)); });
+        item.blocks.forEach(function (sub) {
+          what.appendChild(makeBlock(sub, owner));
+        });
+        li.addEventListener('mousedown', function (e) {
+          holdItem(e, li, b, at, owner);
+        });
         list.appendChild(li);
       });
       return list;
     }
     if (b.kind === 'quote') {
       var call = calloutOf(b.text);
-      if (call) return makeCallout(call, b.at + 1, onToggle);
+      if (call) return makeCallout(call, b.at + 1, owner);
     }
     var box = document.createElement(b.kind === 'heading' ? 'h' + b.level
       : b.kind === 'quote' ? 'blockquote' : 'p');
@@ -3079,7 +3108,7 @@
     return box;
   }
 
-  function makeCallout(call, from, onToggle) {
+  function makeCallout(call, from, owner) {
     var box = el('div', 'callout ' + call.type);
     var head = el('div', 'callout-head');
     head.appendChild(icon(call.type));
@@ -3087,19 +3116,21 @@
     box.appendChild(head);
     if (call.body.trim()) {
       var body = el('div', 'callout-body');
-      fillBlocks(body, blocks(call.body, from), onToggle);
+      fillBlocks(body, blocks(call.body, from), owner);
       box.appendChild(body);
     }
     return box;
   }
 
-  function taskBox(task, onToggle) {
+  function taskBox(task, owner) {
     var box = textBtn('tickbox');
     box.setAttribute('role', 'checkbox');
     box.setAttribute('aria-checked', task.done ? 'true' : 'false');
     box.setAttribute('aria-label', task.text);
     if (task.done) box.appendChild(icon('tick'));
-    box.addEventListener('click', function () { onToggle(task.line); });
+    box.addEventListener('click', function () {
+      toggleTask(owner, task.line);
+    });
     return box;
   }
 
@@ -3118,9 +3149,100 @@
     commit();
   }
 
-  function renderText(el, s, onToggle) {
+  function cancelHold() {
+    clearTimeout(lift.timer);
+    lift = null;
+  }
+
+  function dragLift(y) {
+    var list = lift.li.parentNode;
+    lift.li.classList.add('moving');
+    var rest = [].slice.call(list.querySelectorAll(':scope > li:not(.moving)'));
+    lift.to = slotAt(rest, y);
+    placeDropline(list, rest, lift.to);
+  }
+
+  function dropLift() {
+    var held = lift;
+    lift = null;
+    held.li.classList.remove('lifted', 'moving');
+    document.body.classList.remove('lifting');
+    hideDropline();
+    swallowClick();
+    if (held.to !== held.at) {
+      moveListItem(held.owner, held.list, held.at, held.to);
+    }
+  }
+
+  function holdItem(e, li, list, at, owner) {
+    if (e.target.closest('li') !== li) return;
+    lift = { li: li, list: list, at: at, to: at, owner: owner,
+      x: e.clientX, y: e.clientY, up: false,
+      timer: setTimeout(function () {
+        lift.up = true;
+        li.classList.add('lifted');
+        document.body.classList.add('lifting');
+      }, HOLD_TIME) };
+  }
+
+  function moveListItem(owner, list, from, to) {
+    var lines = owner.text.split('\n');
+    var items = list.items;
+    var parts = items.map(function (item) {
+      return lines.slice(item.line, item.end + 1);
+    });
+    parts.splice(to, 0, parts.splice(from, 1)[0]);
+    if (list.ordered) {
+      parts.forEach(function (part, k) {
+        part[0] = numberLike(part[0], lines[items[k].line]);
+      });
+    }
+    var moved = [].concat.apply([], parts);
+    lines.splice.apply(lines, [items[0].line, moved.length].concat(moved));
+    owner.text = lines.join('\n');
+    commit();
+  }
+
+  function numberLike(line, like) {
+    var bare = unquoted(line);
+    var number = NUMBER.exec(unquoted(like))[1];
+    return line.slice(0, line.length - bare.length)
+      + bare.replace(/\d+/, number);
+  }
+
+  function swallowClick() {
+    function swallow(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    window.addEventListener('click', swallow, true);
+    setTimeout(function () {
+      window.removeEventListener('click', swallow, true);
+    });
+  }
+
+  document.addEventListener('mousemove', function (e) {
+    if (!lift) return;
+    if (lift.up) dragLift(e.clientY);
+    else if (Math.hypot(e.clientX - lift.x, e.clientY - lift.y) > HOLD_SLACK) {
+      cancelHold();
+    }
+  });
+  document.addEventListener('mouseup', function () {
+    if (!lift) return;
+    if (lift.up) dropLift();
+    else cancelHold();
+  });
+  document.addEventListener('dragstart', function (e) {
+    if (!lift) return;
+    if (!lift.up) return cancelHold();
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
+
+  function renderText(el, owner) {
     el.textContent = '';
-    fillBlocks(el, blocks(s), onToggle);
+    fillBlocks(el, blocks(owner.text), owner);
   }
 
   function fillCode(node, s) {
@@ -3285,8 +3407,7 @@
 
     paint(notesPanel, found.col);
     document.getElementById('notesCol').textContent = colOf(found.col).label;
-    renderText(notesWhat, found.card.text,
-      function (at) { toggleTask(found.card, at); });
+    renderText(notesWhat, found.card);
     notesFiles.textContent = '';
     if (found.card.files.length) notesFiles.appendChild(makeFiles(found.card));
     document.getElementById('notesCount').textContent = found.card.notes.length;

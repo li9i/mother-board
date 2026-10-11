@@ -82,6 +82,12 @@ function launch() {
       return fs.existsSync(downloads) ? fs.readdirSync(downloads).sort() : [];
     }
 
+    function mouse(type, x, y) {
+      return send('Input.dispatchMouseEvent', { type, x, y, button: 'left',
+        buttons: type === 'mouseReleased' ? 0 : 1, clickCount: 1 },
+      sessionId);
+    }
+
     async function run(expression) {
       const out = await send('Runtime.evaluate', { expression,
         returnByValue: true, awaitPromise: true, userGesture: true },
@@ -110,7 +116,7 @@ function launch() {
     }
 
     await go();
-    return { chosen, go, listed, run, saved, shown };
+    return { chosen, go, listed, mouse, run, saved, shown };
   }
 
   async function close() {
@@ -146,9 +152,13 @@ async function until(check) {
   for (let i = 0; i < 100; i++) {
     const value = await check();
     if (value) return value;
-    await new Promise((done) => setTimeout(done, 50));
+    await pause(50);
   }
   throw new Error('timed out');
+}
+
+function pause(ms) {
+  return new Promise((done) => setTimeout(done, ms));
 }
 
 test('a save keeps the parts the page does not know', async () => {
@@ -933,4 +943,141 @@ test('the card menu puts the gmail note under its row and delete last',
     assert.deepStrictEqual(rows.slice(-3), ['Send this card by Gmail',
       'Gmail opens with the card downloaded. Drag the file onto the message.',
       'Delete']);
+  });
+
+const HELD = 500;
+const STEPS = 6;
+const NUDGE = 4;
+const ABOVE_IT = -1;
+const SHOES = ['- [ ] Dior', '- [x] IKEA', '- [ ] Αδιάβροχο',
+  '- [ ] Παπούτσια', '  - [ ] one', '  - [ ] two'].join('\n');
+const COLOURS = '- red\n- green\n- blue';
+
+function withLists(text, note) {
+  const board = oneNote([]);
+  cardA(board).text = text;
+  noteN(board).text = note;
+  return board;
+}
+
+function spotOf(root, words) {
+  const walk = document.createTreeWalker(document.querySelector(root),
+    NodeFilter.SHOW_TEXT);
+  while (walk.nextNode()) {
+    if (walk.currentNode.textContent.trim() !== words) continue;
+    const range = document.createRange();
+    range.selectNodeContents(walk.currentNode);
+    const box = range.getBoundingClientRect();
+    return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+  }
+}
+
+function middleOf(selector) {
+  const box = document.querySelector(selector).getBoundingClientRect();
+  return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+}
+
+async function slide(page, from, toY) {
+  for (let k = 1; k <= STEPS; k++) {
+    await page.mouse('mouseMoved', from.x,
+      from.y + (toY - from.y) * k / STEPS);
+  }
+  await page.mouse('mouseReleased', from.x, toY);
+}
+
+async function holdAndMove(page, root, words, onto, side) {
+  const from = await page.run(call(spotOf, root, words));
+  const to = await page.run(call(spotOf, root, onto));
+  await page.mouse('mousePressed', from.x, from.y);
+  await pause(HELD);
+  await slide(page, from, to.y + side * NUDGE);
+}
+
+test('a held list item moves in its own list with the items under it',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, withLists(SHOES, COLOURS));
+      await page.go();
+      await holdAndMove(page, cardOf('a'), 'Παπούτσια', 'IKEA', ABOVE_IT);
+      const out = { parent: cardA(await stored(page, STORE)).text };
+      await holdAndMove(page, cardOf('a'), 'two', 'Dior', ABOVE_IT);
+      out.child = cardA(await stored(page, STORE)).text;
+      return out;
+    });
+
+    assert.strictEqual(seen.parent, ['- [ ] Dior', '- [ ] Παπούτσια',
+      '  - [ ] one', '  - [ ] two', '- [x] IKEA', '- [ ] Αδιάβροχο']
+      .join('\n'));
+    assert.strictEqual(seen.child, ['- [ ] Dior', '- [ ] Παπούτσια',
+      '  - [ ] two', '  - [ ] one', '- [x] IKEA', '- [ ] Αδιάβροχο']
+      .join('\n'));
+  });
+
+test('a moved item leaves the numbers of a numbered list in place',
+  async () => {
+    const text = await inPage(async (page) => {
+      await seed(page, STORE, withLists(['1. alpha', '2. beta', '3. gamma',
+        '', '> [!todo] Steps', '> 5) wash', '> 6) dry', '> 7) fold']
+        .join('\n'), COLOURS));
+      await page.go();
+      await holdAndMove(page, cardOf('a'), 'gamma', 'alpha', ABOVE_IT);
+      await holdAndMove(page, cardOf('a'), 'fold', 'wash', ABOVE_IT);
+      return cardA(await stored(page, STORE)).text;
+    });
+
+    assert.strictEqual(text, ['1. gamma', '2. alpha', '3. beta', '',
+      '> [!todo] Steps', '> 5) fold', '> 6) wash', '> 7) dry'].join('\n'));
+  });
+
+test('a press on a list item lifts it only after a hold', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, withLists(SHOES, COLOURS));
+    await page.go();
+    const textOf = async () => cardA(await stored(page, STORE)).text;
+    const box = await page.run(call(middleOf,
+      cardOf('a') + ' [aria-label="Dior"]'));
+    await page.mouse('mousePressed', box.x, box.y);
+    await pause(HELD);
+    await page.mouse('mouseReleased', box.x, box.y);
+    const out = { held: await textOf() };
+    await page.mouse('mousePressed', box.x, box.y);
+    await page.mouse('mouseReleased', box.x, box.y);
+    out.clicked = await textOf();
+    await page.run('window.cardDrags = 0; document.addEventListener('
+      + '"dragstart", () => { window.cardDrags++; })');
+    const from = await page.run(call(spotOf, cardOf('a'), 'IKEA'));
+    const to = await page.run(call(spotOf, cardOf('a'), 'Παπούτσια'));
+    await page.mouse('mousePressed', from.x, from.y);
+    await slide(page, from, to.y);
+    await pause(HELD);
+    out.dragged = await textOf();
+    out.cardDrags = await page.run('window.cardDrags');
+    return out;
+  });
+
+  const ticked = SHOES.replace('- [ ] Dior', '- [x] Dior');
+  assert.strictEqual(seen.held, SHOES);
+  assert.strictEqual(seen.clicked, ticked);
+  assert.strictEqual(seen.dragged, ticked);
+  assert.strictEqual(seen.cardDrags, 1);
+});
+
+test('the lists in the notes window move as they do on a card',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, withLists(SHOES, COLOURS));
+      await page.go();
+      await page.run('document.querySelector(\'' + cardOf('a')
+        + ' .notemark\').click()');
+      await holdAndMove(page, '#notesWhat', 'Αδιάβροχο', 'Dior', ABOVE_IT);
+      await holdAndMove(page, '#notes ' + cardOf('n'), 'blue', 'red',
+        ABOVE_IT);
+      const saved = await stored(page, STORE);
+      return { card: cardA(saved).text, note: noteN(saved).text };
+    });
+
+    assert.strictEqual(seen.card, ['- [ ] Αδιάβροχο', '- [ ] Dior',
+      '- [x] IKEA', '- [ ] Παπούτσια', '  - [ ] one', '  - [ ] two']
+      .join('\n'));
+    assert.strictEqual(seen.note, '- blue\n- red\n- green');
   });

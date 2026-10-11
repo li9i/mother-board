@@ -14,7 +14,7 @@ The full behaviour of the board. The README keeps the short version.
 
 **The date** on a card is the day it was written. Hold the pointer on the date and the exact time shows, down to the second. A note and a card in a deck show theirs in the same way.
 
-**Drag** moves a card within a column or to another column. A drop on the middle of another card asks first, in a small menu. On the head of a deck, a drop puts the card in the deck and does not ask. Decks, below, has the rest.
+**Drag** moves a card within a column or to another column. A drop on the middle of another card asks first, in a small menu. On the head of a deck, a drop puts the card in the deck and does not ask. Decks, below, has the rest. A drag that starts on an item of a list after a short hold moves the item, not the card. Moving items, below, has the rest.
 
 **Delete** removes a card from the board, and the bin on a note removes the note from its card. On the head of a deck, **Delete** removes the deck and every card in it. None of these asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**.
 
@@ -45,6 +45,13 @@ The text of a callout is card text, so it takes lists, boxes, fences and a headi
 - An item with a box carries no bullet. The box stands where the bullet would be, so one list holds both kinds of item and the words after them line up.
 - A box that is done shows its words in grey, and the plain items and quotes nested under it also. An open box nested under a done box keeps its colour, so work that is not finished still shows. A click turns over one box only, and never the boxes under it.
 - A note takes boxes too. The head of the notes window shows the text of its card, and a box there is the same box as the one on the card.
+
+**Moving items**: hold the mouse still on an item of a list for 0.4 seconds, and the item lifts. A soft highlight shows on it. Move the mouse, and the item fades and a line shows where it will land. Release the button, and the item goes to that line. The board writes the new order into the text of the card, so the order travels with Export and Import as the rest of the card does.
+
+- Any part of the item lifts it: the words, a link or the box. A press that moves before 0.4 seconds drags the card, as it always did. A held box does not turn over when you release it, and a held link does not open.
+- An item moves only among the items of its own list, at its own depth. The items nested under it move with it. A nested item stays under the item that holds it, so a drop above the first item or below the last puts it first or last in its own list.
+- In a numbered list the numbers stay in place and the words move. So `1. alpha`, `2. beta`, `3. gamma`, with `gamma` moved to the top, becomes `1. gamma`, `2. alpha`, `3. beta`.
+- A list in a callout, in a note or in the head of the notes window moves in the same way.
 
 **Fences** mark a block of code. Three or more backticks alone on a line open the block, and a line of at least as many backticks closes it. The lines between them show as you typed them, in one monospace box. The board reads no mark inside a block, so a `#` or an address there stays as plain characters.
 
