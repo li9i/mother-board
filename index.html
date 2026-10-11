@@ -2818,7 +2818,7 @@
       buttons.unshift({ icon: 'pin', title: card.pinned ? 'Unpin' : 'Pin to top',
         onClick: function () { togglePin(card.id); } });
     }
-    buttons.unshift({ cls: 'delbtn', icon: 'bin', title: 'Delete',
+    buttons.push({ cls: 'delbtn', icon: 'bin', title: 'Delete',
       onClick: function () { removeCard(card.id); } });
     var item = makeItem(card, {
       level: 'card',
