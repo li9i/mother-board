@@ -952,6 +952,10 @@
   .ctext li.no > .task-what {
     color: color-mix(in srgb, var(--red) 75%, transparent);
   }
+  .ctext li.struck > .task-what > .task-words {
+    text-decoration: line-through;
+    text-decoration-color: var(--gray-200);
+  }
   .ctext li.done li.task:not(.done) code { color: var(--gray-800); }
   .tickbox {
     flex: none;
@@ -2815,7 +2819,7 @@
   var BOX = /\[[ xyn]\]/i;
   var BOXES = {
     ' ': { done: false, next: 'x' },
-    x: { done: true, next: 'y' },
+    x: { done: true, look: 'struck', next: 'y' },
     y: { done: true, look: 'yes', glyph: 'tick', next: 'n' },
     n: { done: false, look: 'no', glyph: 'cross', next: ' ' }
   };
@@ -3218,14 +3222,17 @@
       b.items.forEach(function (item, at) {
         var li = document.createElement('li');
         var what = li;
+        var words = li;
         if (item.done !== null) {
           li.className = item.done ? 'task done' : 'task';
           if (BOXES[item.mark].look) li.classList.add(BOXES[item.mark].look);
           li.appendChild(taskBox(item, owner));
           what = el('div', 'task-what');
           li.appendChild(what);
+          words = el('span', 'task-words');
+          what.appendChild(words);
         }
-        fillInline(what, item.text);
+        fillInline(words, item.text);
         item.blocks.forEach(function (sub) {
           what.appendChild(makeBlock(sub, owner));
         });

@@ -62,6 +62,8 @@ The list follows the sequence of the tests in the file.
 
 - `a box fills for x, ticks green for y, crosses red for n, words too`: it makes sure that `x` and `X` fill the box with clay and draw no mark, and that `y` and `Y` show a tick on a green box with green words. It also makes sure that `n` and `N` show a cross on a red box with red words, and that an open box under a crossed box keeps its colour.
 
+- `an x box strikes its words with a line fainter than the words`: it makes sure that `x` and `X` draw a line through the words of their item, and that the line is lighter than the words. It also makes sure that `y`, `n`, an open box, and an open box nested under an `x` box show no line.
+
 - `a card with a crossed box is not done in its deck`: it makes sure that a card with `y` or `Y` boxes is done in its deck. It also makes sure that a card with a crossed box is not done, and stays above the done cards.
 
 - `a click turns a box from open to x to y to n and back to open`: it makes sure that four clicks change an open box to `[x]`, then to `[y]`, then to `[n]`, then to `[ ]`. It also makes sure that a click changes `[X]` to `[y]`, `[y]` and `[Y]` to `[n]`, and `[N]` to `[ ]`.

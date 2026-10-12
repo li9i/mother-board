@@ -24,7 +24,7 @@ For more information, refer to [doc/behaviour.md](doc/behaviour.md#cards).
 
 The board shows Markdown in the text of a card: inline code, fenced blocks, links, headings, quotes, callouts, nested lists, checkboxes, dividers and pictures. A quote that starts with a callout word in brackets is a callout, for example `> [!warning]`. **tips** shows all the callout words.
 
-Click an open checkbox to fill it, click again to give it a tick, click a third time to cross it, and click a fourth time to make it open. `[x]` fills the box. `[y]` shows a tick on green with green words, and `[n]` a cross on red with red words. Capital letters do the same. To move an item in its list, put the pointer on the item. Then drag the grip on the left side of the item.
+Click an open checkbox to fill it, click again to give it a tick, click a third time to cross it, and click a fourth time to make it open. `[x]` fills the box and draws a light grey line through the words. `[y]` shows a tick on green with green words, and `[n]` a cross on red with red words. Capital letters do the same. To move an item in its list, put the pointer on the item. Then drag the grip on the left side of the item.
 
 For more information, refer to [doc/behaviour.md](doc/behaviour.md#what-the-card-text-reads).
 

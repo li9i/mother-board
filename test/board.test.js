@@ -1159,6 +1159,48 @@ test('a box fills for x, ticks green for y, crosses red for n, words too',
     assert.strictEqual(look['under n'].words, open.words);
   });
 
+const STRUCK = ['- [x] small x', '  - [ ] under x', '- [X] big X',
+  '- [y] small y', '- [n] small n', '- [ ] open'].join('\n');
+
+function strikes(root) {
+  const out = {};
+  document.querySelectorAll(root + ' [role="checkbox"]').forEach((box) => {
+    const walk = document.createTreeWalker(box.nextSibling,
+      NodeFilter.SHOW_TEXT);
+    let at = walk.nextNode().parentElement;
+    let line = null;
+    while (at && !line) {
+      const style = getComputedStyle(at);
+      if (style.textDecorationLine.includes('line-through')) {
+        line = { line: style.textDecorationColor, words: style.color };
+      }
+      at = at.parentElement;
+    }
+    out[box.getAttribute('aria-label')] = line;
+  });
+  return out;
+}
+
+test('an x box strikes its words with a line fainter than the words',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, withLists(STRUCK, COLOURS));
+      await page.go();
+      return page.run(call(strikes, cardOf('a')));
+    });
+
+    const sum = (colour) => Object.values(rgbOf(colour))
+      .reduce((a, b) => a + b);
+    for (const label of ['small x', 'big X']) {
+      const { line, words } = seen[label];
+      assert.ok(sum(line) > sum(words));
+    }
+    assert.deepStrictEqual(seen['big X'], seen['small x']);
+    for (const label of ['under x', 'small y', 'small n', 'open']) {
+      assert.strictEqual(seen[label], null);
+    }
+  });
+
 test('a card with a crossed box is not done in its deck', async () => {
   const seen = await inPage(async (page) => {
     await seed(page, STORE, { cols: { remember: [], now: [],
