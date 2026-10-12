@@ -1178,14 +1178,14 @@ test('a card with a crossed box is not done in its deck', async () => {
   assert.deepStrictEqual(seen.order, ['k3', 'k4', 'k1', 'k2']);
 });
 
-test('a click turns a box from open to done to cross and back to open',
+test('a click turns a box from open to x to y to n and back to open',
   async () => {
     const seen = await inPage(async (page) => {
       await seed(page, STORE, withLists(['- [ ] open', '- [y] small y',
         '- [Y] big Y', '- [X] big X', '- [N] big N'].join('\n'), COLOURS));
       await page.go();
       const steps = [];
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 4; i++) {
         await page.run(call(clickBox, cardOf('a'), 'open'));
         steps.push(cardA(await stored(page, STORE)).text.split('\n')[0]);
       }
@@ -1196,9 +1196,9 @@ test('a click turns a box from open to done to cross and back to open',
     });
 
     assert.deepStrictEqual(seen.steps,
-      ['- [x] open', '- [n] open', '- [ ] open']);
+      ['- [x] open', '- [y] open', '- [n] open', '- [ ] open']);
     assert.strictEqual(seen.text, ['- [ ] open', '- [n] small y',
-      '- [n] big Y', '- [n] big X', '- [ ] big N'].join('\n'));
+      '- [n] big Y', '- [y] big X', '- [ ] big N'].join('\n'));
   });
 
 const PIC = { width: 3, height: 2 };

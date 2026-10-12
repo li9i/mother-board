@@ -2815,7 +2815,7 @@
   var BOX = /\[[ xyn]\]/i;
   var BOXES = {
     ' ': { done: false, next: 'x' },
-    x: { done: true, next: 'n' },
+    x: { done: true, next: 'y' },
     y: { done: true, look: 'yes', glyph: 'tick', next: 'n' },
     n: { done: false, look: 'no', glyph: 'cross', next: ' ' }
   };

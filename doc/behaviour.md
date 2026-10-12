@@ -43,7 +43,7 @@ The text of a callout is card text, so it takes lists, boxes, fences and a headi
 
 - Only a space, `x`, `X`, `y`, `Y`, `n` or `N` goes between the brackets, and a space follows them. So `- [-] read` is an item with the characters that you typed. A numbered item takes no box.
 - `x` or `X` fills the box with clay and draws no mark. `y` or `Y` draws a tick on a green box, and `n` or `N` a cross on a red box.
-- A click on an open box writes `[x]`. A click on a box that is done writes `[n]`, and a click on a crossed box writes `[ ]`. So three clicks go from open to done to cross and back to open.
+- A click on an open box writes `[x]`. A click on an `x` or `X` box writes `[y]`, a click on a `y` or `Y` box writes `[n]`, and a click on a crossed box writes `[ ]`. So four clicks go from open to filled to tick to cross and back to open.
 - An item with a box carries no bullet. The box stands where the bullet would be, so one list holds both kinds of item and the words after them line up.
 - A box that is done shows its words in grey, and the plain items and quotes nested under it also. A `y` or `Y` box shows them in faint green, and a crossed box in faint red. An open box nested under a done or crossed box keeps its colour, so work that is not finished still shows. A click changes one box only, and never the boxes under it.
 - A note takes boxes too. The head of the notes window shows the text of its card, and a box there is the same box as the one on the card.

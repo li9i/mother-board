@@ -64,7 +64,7 @@ The list follows the sequence of the tests in the file.
 
 - `a card with a crossed box is not done in its deck`: it makes sure that a card with `y` or `Y` boxes is done in its deck. It also makes sure that a card with a crossed box is not done, and stays above the done cards.
 
-- `a click turns a box from open to done to cross and back to open`: it makes sure that three clicks change an open box to `[x]`, then to `[n]`, then to `[ ]`. It also makes sure that a click changes `[y]`, `[Y]` and `[X]` to `[n]`, and `[N]` to `[ ]`.
+- `a click turns a box from open to x to y to n and back to open`: it makes sure that four clicks change an open box to `[x]`, then to `[y]`, then to `[n]`, then to `[ ]`. It also makes sure that a click changes `[X]` to `[y]`, `[y]` and `[Y]` to `[n]`, and `[N]` to `[ ]`.
 
 - `a picture pasted in the edit box shows in the card text`: it makes sure that a picture that you paste in the box for the text of a card goes to the position of the cursor. It also makes sure that the picture shows in the card with no chip, and that a second `image.png` becomes `image (2).png`.
 
