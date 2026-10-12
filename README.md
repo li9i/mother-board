@@ -24,7 +24,7 @@ For more information, refer to [doc/behaviour.md](doc/behaviour.md#cards).
 
 The board shows Markdown in the text of a card: inline code, fenced blocks, links, headings, quotes, callouts, nested lists, checkboxes, dividers and pictures. A quote that starts with a callout word in brackets is a callout, for example `> [!warning]`. **tips** shows all the callout words.
 
-Click an open checkbox to make it done, and click it again to make it open. To move an item in its list, put the pointer on the item. Then drag the grip on the left side of the item.
+Click an open checkbox to fill it, click again to cross it, and click a third time to make it open. `[x]` fills the box. `[y]` shows a tick on green with green words, and `[n]` a cross on red with red words. Capital letters do the same. To move an item in its list, put the pointer on the item. Then drag the grip on the left side of the item.
 
 For more information, refer to [doc/behaviour.md](doc/behaviour.md#what-the-card-text-reads).
 
@@ -64,7 +64,7 @@ For more information, refer to [doc/behaviour.md](doc/behaviour.md#levels).
 
 A deck keeps cards together below a head card. If you drop a card on the middle of a different card, a small menu opens. The menu has up to three buttons: **Create deck**, **Place above this card** and **Place below this card**. If you drop the card near the top or bottom edge of a different card, the card moves and the menu does not open.
 
-The arrow before the date of the head folds the deck. A card in a deck is done when it has checkboxes and all of them are done. Done cards go to the bottom of the deck.
+The arrow before the date of the head folds the deck. A card in a deck is done when it has checkboxes and all of them are done. A crossed box is not done. Done cards go to the bottom of the deck.
 
 For more information, refer to [doc/behaviour.md](doc/behaviour.md#decks).
 

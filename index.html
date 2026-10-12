@@ -944,7 +944,14 @@
   .task-what { min-width: 0; }
   .ctext li p, .ctext li blockquote { margin: 0; }
   .ctext .done, .ctext .done code { color: var(--gray-500); }
-  .ctext li.done li.task:not(.done) { color: var(--text, var(--slate)); }
+  .ctext li.done li.task:not(.done),
+  .ctext li.no li.task:not(.done) { color: var(--text, var(--slate)); }
+  .ctext li.yes > .task-what {
+    color: color-mix(in srgb, var(--olive) 75%, transparent);
+  }
+  .ctext li.no > .task-what {
+    color: color-mix(in srgb, var(--red) 75%, transparent);
+  }
   .ctext li.done li.task:not(.done) code { color: var(--gray-800); }
   .tickbox {
     flex: none;
@@ -965,6 +972,14 @@
   .tickbox[aria-checked="true"] {
     background: var(--clay-d);
     border-color: var(--clay-d);
+  }
+  .ctext li.yes > .tickbox {
+    background: var(--olive);
+    border-color: var(--olive);
+  }
+  .ctext li.no > .tickbox {
+    background: var(--red);
+    border-color: var(--red);
   }
   .tickbox:focus-visible {
     outline: 2px solid var(--clay-d);
@@ -1497,6 +1512,7 @@
        + 'M2.25 12h2.75 M19 12h2.75 M5.11 5.11l1.94 1.94 M16.95 16.95l1.94 1.94 '
        + 'M5.11 18.89l1.94-1.94 M16.95 7.05l1.94-1.94',
     tick: 'M20 6L9 17l-5-5',
+    cross: 'M18 6L6 18 M6 6l12 12',
     board: 'M3.5 4.5h17v15h-17Z M8 4.5v15 M12 4.5v15 M16 4.5v15',
     chev: 'M9 6l6 6-6 6',
     grip: 'M9.5 5h.01 M9.5 12h.01 M9.5 19h.01 M14.5 5h.01 M14.5 12h.01 '
@@ -2795,8 +2811,14 @@
   var QUOTE = /^ {0,3}>\s?(.*)$/;
   var BULLET = /^[ \t]*[-*+]\s+(.*)$/;
   var NUMBER = /^[ \t]*(\d+)[.)]\s+(.*)$/;
-  var TASK = /^[ \t]*[-*+]\s+\[([ x])\]\s+(.*)$/;
-  var BOX = /\[[ x]\]/;
+  var TASK = /^[ \t]*[-*+]\s+\[([ xyn])\]\s+(.*)$/i;
+  var BOX = /\[[ xyn]\]/i;
+  var BOXES = {
+    ' ': { done: false, next: 'x' },
+    x: { done: true, next: 'n' },
+    y: { done: true, look: 'yes', glyph: 'tick', next: 'n' },
+    n: { done: false, look: 'no', glyph: 'cross', next: ' ' }
+  };
   var LEAD = /^[ \t]*/;
 
   var CALLOUTS = {
@@ -2871,7 +2893,8 @@
         var ordered = !bullet;
         var task = bullet && TASK.exec(line);
         var item = { text: task ? task[2] : (ordered ? m[2] : m[1]),
-          done: task ? task[1] === 'x' : null, line: off + i, blocks: [] };
+          done: task ? BOXES[task[1].toLowerCase()].done : null,
+          mark: task && task[1].toLowerCase(), line: off + i, blocks: [] };
         var list = { kind: 'list', ordered: ordered, start: ordered ? Number(m[1]) : 1,
           items: [item] };
         var under = host >= 0 ? open.trail[host].item.blocks : null;
@@ -3197,6 +3220,7 @@
         var what = li;
         if (item.done !== null) {
           li.className = item.done ? 'task done' : 'task';
+          if (BOXES[item.mark].look) li.classList.add(BOXES[item.mark].look);
           li.appendChild(taskBox(item, owner));
           what = el('div', 'task-what');
           li.appendChild(what);
@@ -3244,7 +3268,8 @@
     box.setAttribute('role', 'checkbox');
     box.setAttribute('aria-checked', task.done ? 'true' : 'false');
     box.setAttribute('aria-label', task.text);
-    if (task.done) box.appendChild(icon('tick'));
+    var glyph = BOXES[task.mark].glyph;
+    if (glyph) box.appendChild(icon(glyph));
     box.addEventListener('click', function () {
       toggleTask(owner, task.line);
     });
@@ -3261,7 +3286,8 @@
     var lines = item.text.split('\n');
     var m = TASK.exec(unquoted(lines[at]));
     if (!m) return;
-    lines[at] = lines[at].replace(BOX, m[1] === 'x' ? '[ ]' : '[x]');
+    lines[at] = lines[at].replace(BOX,
+      '[' + BOXES[m[1].toLowerCase()].next + ']');
     item.text = lines.join('\n');
     commit();
   }

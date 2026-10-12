@@ -39,11 +39,13 @@ The nouns are the ones Obsidian has: `note`, `abstract` (`summary`, `tldr`), `in
 
 The text of a callout is card text, so it takes lists, boxes, fences and a heading. Only the first line of a quote can name a callout. The board does not fold a callout, so a `+` or a `-` after the brackets is read and dropped.
 
-**Checkboxes**: at the head of a bulleted item, `- [ ]` makes an open box and `- [x]` a box that is done. A click on a box turns it over and writes the change into the text of the card. So the state of a box is text, and it travels with Export and Import as the rest of the card does.
+**Checkboxes**: at the head of a bulleted item, `- [ ]` makes an open box. `- [x]`, `- [X]`, `- [y]` and `- [Y]` make a box that is done. `- [n]` and `- [N]` make a box with a cross, and that box is not done. A click on a box changes it and writes the change into the text of the card. So the state of a box is text, and it travels with Export and Import as the rest of the card does.
 
-- Only a space or a lower case `x` goes between the brackets, and a space follows them. So `- [X] read` and `- [-] read` are items with the characters that you typed. A numbered item takes no box.
+- Only a space, `x`, `X`, `y`, `Y`, `n` or `N` goes between the brackets, and a space follows them. So `- [-] read` is an item with the characters that you typed. A numbered item takes no box.
+- `x` or `X` fills the box with clay and draws no mark. `y` or `Y` draws a tick on a green box, and `n` or `N` a cross on a red box.
+- A click on an open box writes `[x]`. A click on a box that is done writes `[n]`, and a click on a crossed box writes `[ ]`. So three clicks go from open to done to cross and back to open.
 - An item with a box carries no bullet. The box stands where the bullet would be, so one list holds both kinds of item and the words after them line up.
-- A box that is done shows its words in grey, and the plain items and quotes nested under it also. An open box nested under a done box keeps its colour, so work that is not finished still shows. A click turns over one box only, and never the boxes under it.
+- A box that is done shows its words in grey, and the plain items and quotes nested under it also. A `y` or `Y` box shows them in faint green, and a crossed box in faint red. An open box nested under a done or crossed box keeps its colour, so work that is not finished still shows. A click changes one box only, and never the boxes under it.
 - A note takes boxes too. The head of the notes window shows the text of its card, and a box there is the same box as the one on the card.
 
 **Moving items**: put the pointer on an item of a list, and a grip of six dots shows to its left. Press the grip and move the mouse, and the item fades and a line shows where it will land. Release the button, and the item goes to that line. The board writes the new order into the text of the card, so the order travels with Export and Import as the rest of the card does.
@@ -117,7 +119,7 @@ A deck is a card with cards of its own under it. The card on top is the head. It
 - Over the head of a deck, everything below its top quarter shows the ring with **add to deck**, and a drop puts the card at the top of the deck.
 - **+ add to deck**, right under the head, writes a new card at the top of the deck. It works as the box at the top of a column does, burst included.
 - Over the cards of a deck, only the line shows. A drop there puts the card into the deck at that line, and never makes a deck inside a deck. A drag also takes a card out of a deck to any place in a column. A card that joins a deck loses its pin and its level. A drag on the head moves the whole deck. A head never shows the ring, because a deck cannot go into another deck, so a head dropped on the cards of a deck lands in the column next to that deck. When the last card leaves a deck, the head is a plain card again.
-- Under its text, the head shows a bar and a count such as `3 of 14 done`. A card in a deck is done when it has at least one box and every box on it is ticked. A card with no box is never done.
+- Under its text, the head shows a bar and a count such as `3 of 14 done`. A card in a deck is done when it has at least one box and every box on it is done. A card with no box is never done, and a card with a crossed box is not done.
 - Done cards go to the foot of the deck, below a line such as `3 done`. The arrow before the count folds the done cards away, and a second press shows them again. A new deck shows its done cards. The fold is on the head, so it travels with Export and shows in another tab.
 - The arrow before the date of the head folds the deck to its head, and a second press unfolds it. The fold is on the head, so it travels with Export and shows in another tab.
 - A card in a deck is a full card, with a date, notes and a menu. Its menu holds **Attach a file**, **Download this card**, **Send this card by Gmail** and **Delete**. It takes no pin and no level.

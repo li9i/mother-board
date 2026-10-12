@@ -60,6 +60,12 @@ The list follows the sequence of the tests in the file.
 
 - `the lists in the notes window move as they do on a card`: it makes sure that the lists in a note, and in the head of the notes window, move as they do on a card.
 
+- `a box fills for x, ticks green for y, crosses red for n, words too`: it makes sure that `x` and `X` fill the box with clay and draw no mark, and that `y` and `Y` show a tick on a green box with green words. It also makes sure that `n` and `N` show a cross on a red box with red words, and that an open box under a crossed box keeps its colour.
+
+- `a card with a crossed box is not done in its deck`: it makes sure that a card with `y` or `Y` boxes is done in its deck. It also makes sure that a card with a crossed box is not done, and stays above the done cards.
+
+- `a click turns a box from open to done to cross and back to open`: it makes sure that three clicks change an open box to `[x]`, then to `[n]`, then to `[ ]`. It also makes sure that a click changes `[y]`, `[Y]` and `[X]` to `[n]`, and `[N]` to `[ ]`.
+
 - `a picture pasted in the edit box shows in the card text`: it makes sure that a picture that you paste in the box for the text of a card goes to the position of the cursor. It also makes sure that the picture shows in the card with no chip, and that a second `image.png` becomes `image (2).png`.
 
 - `a picture dropped on a card or in its edit box lands in the text`: it makes sure that a picture that you drop on a card goes to the end of its text. It also makes sure that a different file stays a chip. It then makes sure that a picture that you drop in the box goes where you drop it.

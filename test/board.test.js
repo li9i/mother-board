@@ -1093,6 +1093,114 @@ test('the lists in the notes window move as they do on a card',
     assert.strictEqual(seen.note, '- blue\n- red\n- green');
   });
 
+const MARKED = ['- [ ] open', '- [x] small x', '- [X] big X',
+  '- [y] small y', '- [Y] big Y', '- [n] small n', '  - [ ] under n',
+  '- [N] big N'].join('\n');
+const CLEAR = 'rgba(0, 0, 0, 0)';
+
+function boxLooks(root) {
+  const out = {};
+  document.querySelectorAll(root + ' [role="checkbox"]').forEach((box) => {
+    const mark = box.querySelector('path');
+    out[box.getAttribute('aria-label')] = {
+      checked: box.getAttribute('aria-checked'),
+      fill: getComputedStyle(box).backgroundColor,
+      glyph: mark && mark.getAttribute('d'),
+      words: getComputedStyle(box.nextSibling).color };
+  });
+  return out;
+}
+
+function rgbOf(colour) {
+  const [r, g, b] = colour.match(/[\d.]+/g).map(Number);
+  return { r, g, b };
+}
+
+function clickBox(root, label) {
+  document.querySelector(root + ' [aria-label="' + label + '"]').click();
+}
+
+test('a box fills for x, ticks green for y, crosses red for n, words too',
+  async () => {
+    const look = await inPage(async (page) => {
+      await seed(page, STORE, withLists(MARKED, COLOURS));
+      await page.go();
+      return page.run(call(boxLooks, cardOf('a')));
+    });
+
+    const open = look['open'];
+    const full = look['small x'];
+    const yes = look['small y'];
+    const no = look['small n'];
+    assert.deepStrictEqual(look['big X'], full);
+    assert.deepStrictEqual(look['big Y'], yes);
+    assert.deepStrictEqual(look['big N'], no);
+    assert.strictEqual(open.glyph, null);
+    assert.strictEqual(open.fill, CLEAR);
+    assert.strictEqual(full.checked, 'true');
+    assert.strictEqual(yes.checked, 'true');
+    assert.strictEqual(no.checked, 'false');
+    assert.strictEqual(full.glyph, null);
+    assert.ok(yes.glyph);
+    assert.ok(no.glyph);
+    assert.notStrictEqual(no.glyph, yes.glyph);
+    assert.notStrictEqual(full.fill, CLEAR);
+    assert.notStrictEqual(yes.fill, full.fill);
+    assert.notStrictEqual(no.fill, full.fill);
+    for (const green of [rgbOf(yes.fill), rgbOf(yes.words)]) {
+      assert.ok(green.g > green.r && green.g > green.b);
+    }
+    for (const red of [rgbOf(no.fill), rgbOf(no.words)]) {
+      assert.ok(red.r > red.g && red.r > red.b);
+    }
+    assert.notStrictEqual(yes.words, yes.fill);
+    assert.notStrictEqual(no.words, no.fill);
+    assert.notStrictEqual(full.words, open.words);
+    assert.strictEqual(look['under n'].words, open.words);
+  });
+
+test('a card with a crossed box is not done in its deck', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, { cols: { remember: [], now: [],
+      accomplished: [], backlog: [
+        { id: 'h', text: 'head', created: 1, cards: [
+          { id: 'k1', text: '- [y] one', created: 1 },
+          { id: 'k2', text: '- [Y] two', created: 1 },
+          { id: 'k3', text: '- [x] three\n- [n] four', created: 1 },
+          { id: 'k4', text: '- [N] five', created: 1 }] }] } });
+    await page.go();
+    return page.run('({ tally: document.querySelector(".deck-tally")'
+      + '.textContent, order: [...document.querySelectorAll('
+      + '".deck-body .card")].map((c) => c.dataset.id) })');
+  });
+
+  assert.strictEqual(seen.tally, '2 of 4 done');
+  assert.deepStrictEqual(seen.order, ['k3', 'k4', 'k1', 'k2']);
+});
+
+test('a click turns a box from open to done to cross and back to open',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, withLists(['- [ ] open', '- [y] small y',
+        '- [Y] big Y', '- [X] big X', '- [N] big N'].join('\n'), COLOURS));
+      await page.go();
+      const steps = [];
+      for (let i = 0; i < 3; i++) {
+        await page.run(call(clickBox, cardOf('a'), 'open'));
+        steps.push(cardA(await stored(page, STORE)).text.split('\n')[0]);
+      }
+      for (const label of ['small y', 'big Y', 'big X', 'big N']) {
+        await page.run(call(clickBox, cardOf('a'), label));
+      }
+      return { steps, text: cardA(await stored(page, STORE)).text };
+    });
+
+    assert.deepStrictEqual(seen.steps,
+      ['- [x] open', '- [n] open', '- [ ] open']);
+    assert.strictEqual(seen.text, ['- [ ] open', '- [n] small y',
+      '- [n] big Y', '- [n] big X', '- [ ] big N'].join('\n'));
+  });
+
 const PIC = { width: 3, height: 2 };
 const WHAT_EDIT = '#notes textarea.notes-edit';
 const PIC_SHOWN = PIC.width + 'x' + PIC.height;
