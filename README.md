@@ -88,7 +88,7 @@ For more information, refer to [doc/behaviour.md](doc/behaviour.md#palette).
 
 ## Export and Import
 
-**Export** opens a menu with two items. **Download the board** writes the board that you are in, with all the boards in it, to a file. The file is JSON, or a zip with the JSON and the files if the board holds files. **Send the board by Gmail** downloads the same file and opens a new message, but it cannot attach the file. Drag the file onto the message. **Import** reads a board, which replaces the board that you are in, or one card, which goes into it. A card that is already on the board does not arrive a second time.
+**Export** opens a menu with two items. **Download the board** writes the board that you are in, with all the boards in it, to a file. The file is a zip with the JSON and the files of the board. **Send the board by Gmail** downloads the same file and opens a new message, but it cannot attach the file. Drag the file onto the message. **Import** reads a board, which replaces the board that you are in, or one card, which goes into it. A card that is already on the board does not arrive a second time.
 
 For more information, refer to [doc/behaviour.md](doc/behaviour.md#export-and-import).
 

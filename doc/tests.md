@@ -42,7 +42,7 @@ The list follows the sequence of the tests in the file.
 
 - `a zip holds a folder for each card and note that has files`: it makes sure that a zip holds a folder for each card and note that has files. It also makes sure that, if two folders or two files have the same name, the second gets a number.
 
-- `a card or a board with no files downloads as plain JSON`: it makes sure that a card or a board with no files downloads as a JSON file, not as a zip.
+- `a card or a board with no files still downloads as a zip`: it makes sure that a card or a board with no files downloads as a zip that holds only the JSON.
 
 - `import reads a zip that another program packed again`: it makes the card zip again, as a different program can do, with compressed files in one more folder. It then makes sure that **Import** reads the zip.
 

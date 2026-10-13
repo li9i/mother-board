@@ -729,7 +729,7 @@ test('a zip holds a folder for each card and note that has files',
     });
   });
 
-test('a card or a board with no files downloads as plain JSON',
+test('a card or a board with no files still downloads as a zip',
   async () => {
     const seen = await inPage(async (page) => {
       await seed(page, STORE, oneNote([]));
@@ -737,18 +737,20 @@ test('a card or a board with no files downloads as plain JSON',
       await page.run('document.querySelector(\'' + cardOf('a')
         + ' .menubtn\').click()');
       return {
-        card: JSON.parse(await page.saved(call(choose, 'Download this card'),
-          /^personal-board-card-\d+\.json$/)),
-        board: JSON.parse(await page.saved('document.getElementById('
+        card: unzipped(await page.saved(call(choose, 'Download this card'),
+          ZIP, null)),
+        board: unzipped(await page.saved('document.getElementById('
           + '"exportBtn").click();' + call(choose, 'Download the board'),
-          /^personal-board-\d+\.json$/))
+          /^personal-board-\d+\.zip$/, null))
       };
     });
 
-    assert.strictEqual(seen.card.card.text, 'card a');
-    assert.strictEqual(seen.board.cols.backlog[0].text, 'card a');
-    assert.strictEqual('blobs' in seen.card, false);
-    assert.strictEqual('blobs' in seen.board, false);
+    assert.deepStrictEqual(Object.keys(seen.card), ['card.json']);
+    assert.deepStrictEqual(Object.keys(seen.board), ['board.json']);
+    assert.strictEqual(JSON.parse(seen.card['card.json']).card.text,
+      'card a');
+    assert.strictEqual(JSON.parse(seen.board['board.json'])
+      .cols.backlog[0].text, 'card a');
   });
 
 function repacked(files) {

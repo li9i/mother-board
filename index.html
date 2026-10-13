@@ -3833,16 +3833,11 @@
 
   function download(name, data) {
     var holders = data.card ? holdersOf(data.card) : boardHolders(data);
-    var file = name + '-' + Math.floor(Date.now() / 1000);
-    if (!holders.length) {
-      saveBlob(file + '.json', new Blob([JSON.stringify(data, null, 2)],
-        { type: 'application/json' }));
-      return file + '.json';
-    }
+    var file = name + '-' + Math.floor(Date.now() / 1000) + '.zip';
     zipped(data, holders).then(function (blob) {
-      saveBlob(file + '.zip', blob);
+      saveBlob(file, blob);
     });
-    return file + '.zip';
+    return file;
   }
 
   function holdersOf(card) {
