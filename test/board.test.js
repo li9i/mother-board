@@ -1131,6 +1131,7 @@ function boxLooks(root) {
       checked: box.getAttribute('aria-checked'),
       fill: getComputedStyle(box).backgroundColor,
       glyph: mark && mark.getAttribute('d'),
+      flat: mark && mark.getBBox().height === 0,
       words: getComputedStyle(box.nextSibling).color };
   });
   return out;
@@ -1145,7 +1146,7 @@ function clickBox(root, label) {
   document.querySelector(root + ' [aria-label="' + label + '"]').click();
 }
 
-test('a box fills for x, ticks green for y, crosses red for n, words too',
+test('a box shows a bar for x, ticks green for y, crosses red for n, words too',
   async () => {
     const look = await inPage(async (page) => {
       await seed(page, STORE, withLists(MARKED, COLOURS));
@@ -1165,7 +1166,9 @@ test('a box fills for x, ticks green for y, crosses red for n, words too',
     assert.strictEqual(full.checked, 'true');
     assert.strictEqual(yes.checked, 'true');
     assert.strictEqual(no.checked, 'false');
-    assert.strictEqual(full.glyph, null);
+    assert.strictEqual(full.flat, true);
+    assert.strictEqual(yes.flat, false);
+    assert.strictEqual(no.flat, false);
     assert.ok(yes.glyph);
     assert.ok(no.glyph);
     assert.notStrictEqual(no.glyph, yes.glyph);

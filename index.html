@@ -1384,7 +1384,7 @@
       <div>
         <div class="eyebrow">personal / board</div>
         <h1 id="trail">Mother Board</h1>
-        <div class="hintline">drag cards between columns <span class="toolsep">·</span> double-click a card to edit <span class="toolsep">·</span> hover for more options <span class="toolsep">·</span> ctrl z/y to undo/redo</div>
+        <div class="hintline">drag cards between columns <span class="toolsep">·</span> double-click a card to edit <span class="toolsep">·</span> hover for more options <span class="toolsep">·</span> ctrl-z/y to undo/redo</div>
       </div>
       <div class="tools" id="tools">
         <button class="pill" id="tipsBtn" type="button" aria-haspopup="dialog">tips</button>
@@ -1519,6 +1519,7 @@
        + 'M2.25 12h2.75 M19 12h2.75 M5.11 5.11l1.94 1.94 M16.95 16.95l1.94 1.94 '
        + 'M5.11 18.89l1.94-1.94 M16.95 7.05l1.94-1.94',
     tick: 'M20 6L9 17l-5-5',
+    bar: 'M6 12h12',
     cross: 'M18 6L6 18 M6 6l12 12',
     board: 'M3.5 4.5h17v15h-17Z M8 4.5v15 M12 4.5v15 M16 4.5v15',
     chev: 'M9 6l6 6-6 6',
@@ -2865,7 +2866,7 @@
   var BOX = /\[[ xyn]\]/i;
   var BOXES = {
     ' ': { done: false, next: 'x' },
-    x: { done: true, look: 'struck', next: 'y' },
+    x: { done: true, look: 'struck', glyph: 'bar', next: 'y' },
     y: { done: true, look: 'yes', glyph: 'tick', next: 'n' },
     n: { done: false, look: 'no', glyph: 'cross', next: ' ' }
   };

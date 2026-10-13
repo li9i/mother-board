@@ -60,7 +60,7 @@ The list follows the sequence of the tests in the file.
 
 - `the lists in the notes window move as they do on a card`: it makes sure that the lists in a note, and in the head of the notes window, move as they do on a card.
 
-- `a box fills for x, ticks green for y, crosses red for n, words too`: it makes sure that `x` and `X` fill the box with clay and draw no mark, and that `y` and `Y` show a tick on a green box with green words. It also makes sure that `n` and `N` show a cross on a red box with red words, and that an open box under a crossed box keeps its colour.
+- `a box shows a bar for x, ticks green for y, crosses red for n, words too`: it makes sure that `x` and `X` show a flat bar on a clay box, and that `y` and `Y` show a tick on a green box with green words. It also makes sure that `n` and `N` show a cross on a red box with red words, and that an open box under a crossed box keeps its colour.
 
 - `an x box strikes its words with a line fainter than the words`: it makes sure that `x` and `X` draw a line through the words of their item, and that the line is lighter than the words. It also makes sure that `y`, `n`, an open box, and an open box nested under an `x` box show no line.
 
