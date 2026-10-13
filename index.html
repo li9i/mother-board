@@ -1481,6 +1481,8 @@
   var UNDOS = 'personal.undo.v1.';
   var MY_UNDO = UNDOS + uid();
   var UNDO_TIME = 6000;
+  var STEPS = 100;
+  var IDS = /"id":"[^"]*"/g;
   var ATTACH = 'Attach a file';
   var SHOWN = /^(image\/(?!svg)|audio\/|video\/|application\/pdf$|text\/plain$)/;
   var IMAGE = /^image\//;
@@ -1648,27 +1650,29 @@
     });
   }
 
-  function pendingUndos() {
+  function pendingUndos(live) {
     var held = '';
     Object.keys(localStorage).forEach(function (key) {
       if (key.indexOf(UNDOS) !== 0) return;
-      var undo = JSON.parse(lsGet(key));
-      if (undo.until > Date.now()) held += undo.ids;
-      else lsDel(key);
+      if (pick(live, function (lock) { return lock.name === key; })) {
+        held += lsGet(key);
+      } else lsDel(key);
     });
     return held;
   }
 
   function sweepFiles() {
-    fileStore('readwrite', function (store) {
-      var all = store.getAllKeys();
-      all.onsuccess = function () {
-        var held = lsGet(STORE) + pendingUndos();
-        all.result.forEach(function (id) {
-          if (held.indexOf(id) < 0) store.delete(id);
-        });
-      };
-      return all;
+    navigator.locks.query().then(function (locks) {
+      fileStore('readwrite', function (store) {
+        var all = store.getAllKeys();
+        all.onsuccess = function () {
+          var held = lsGet(STORE) + pendingUndos(locks.held);
+          all.result.forEach(function (id) {
+            if (held.indexOf(id) < 0) store.delete(id);
+          });
+        };
+        return all;
+      });
     });
   }
 
@@ -1694,10 +1698,12 @@
 
   carry();
   var state = load();
+  var last = JSON.stringify(state);
+  var undos = [];
+  var redos = [];
   var path = [];
   var drag = null;
   var lift = null;
-  var lastDeleted = null;
   var toastTimer = null;
 
   function blank() {
@@ -1804,7 +1810,57 @@
   }
 
   function save() {
-    lsSet(STORE, JSON.stringify(state));
+    var now = JSON.stringify(state);
+    if (now === last) return;
+    undos = undos.concat(stepOf(path)).slice(-STEPS);
+    redos = [];
+    keepBoard(now);
+  }
+
+  function keepBoard(board) {
+    last = board;
+    lsSet(STORE, board);
+    holdFiles();
+    hideToast();
+  }
+
+  function stepOf(where) {
+    return { board: last, path: where, ids: idsOf(last) };
+  }
+
+  function idsOf(board) {
+    return board.match(IDS) || [];
+  }
+
+  function holdFiles() {
+    var held = {};
+    undos.concat(redos).forEach(function (step) {
+      step.ids.forEach(function (id) { held[id] = true; });
+    });
+    idsOf(last).forEach(function (id) { delete held[id]; });
+    var ids = Object.keys(held).join(' ');
+    if (ids) lsSet(MY_UNDO, ids);
+    else lsDel(MY_UNDO);
+  }
+
+  function travel(from, to) {
+    var step = from.pop();
+    if (!step) return;
+    to.push(stepOf(step.path));
+    state = JSON.parse(step.board);
+    keepBoard(step.board);
+    path = step.path;
+    enter(path);
+    show();
+    markPalettes();
+  }
+
+  function undo() {
+    travel(undos, redos);
+  }
+
+  function redo() {
+    travel(redos, undos);
   }
 
   function commit() {
@@ -2265,11 +2321,7 @@
     commit();
   }
 
-  function discard(rec, msg) {
-    rec.path = path.slice();
-    lastDeleted = rec;
-    lsSet(MY_UNDO, JSON.stringify({ until: Date.now() + UNDO_TIME,
-      ids: JSON.stringify(rec).match(/"id":"[^"]*"/g).join(' ') }));
+  function discard(msg) {
     commit();
     showToast(msg);
   }
@@ -2285,8 +2337,7 @@
       msg = 'Board of ' + plural(boardSize(found.card.board), 'card')
         + ' deleted';
     }
-    discard({ col: found.col, deckOf: found.deck && found.deck.id, index: found.index,
-      cards: [found.card] }, msg);
+    discard(msg);
   }
 
   function removeNote(id) {
@@ -2294,14 +2345,15 @@
     if (!list) return;
     var i = indexOfId(list, id);
     if (i < 0) return;
-    discard({ noteOf: openCardId, index: i, cards: list.splice(i, 1) }, 'Note deleted');
+    list.splice(i, 1);
+    discard('Note deleted');
   }
 
   function clearColumn(key) {
     var taken = here().cols[key];
     if (!taken.length) return;
     here().cols[key] = [];
-    discard({ col: key, index: 0, cards: taken }, plural(sizeOf(taken), 'card') + ' cleared');
+    discard(plural(sizeOf(taken), 'card') + ' cleared');
   }
 
   var toast = document.getElementById('toast');
@@ -2310,15 +2362,7 @@
     document.getElementById('toastMsg').textContent = msg;
     toast.classList.add('on');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () {
-      toast.classList.remove('on');
-      dropUndo();
-    }, UNDO_TIME);
-  }
-
-  function dropUndo() {
-    lastDeleted = null;
-    lsDel(MY_UNDO);
+    toastTimer = setTimeout(hideToast, UNDO_TIME);
   }
 
   function hideToast() {
@@ -2326,26 +2370,7 @@
     toast.classList.remove('on');
   }
 
-  function undoList(rec) {
-    var owner = rec.noteOf || rec.deckOf;
-    var board = steps(rec.path).pop().board;
-    if (!owner) return board.cols[rec.col];
-    var found = find(owner, board);
-    if (!found) return null;
-    return rec.noteOf ? found.card.notes : found.card.cards;
-  }
-
-  document.getElementById('undoBtn').addEventListener('click', function () {
-    if (!lastDeleted) return;
-    var list = lastDeleted.list || undoList(lastDeleted);
-    if (list) {
-      var at = Math.min(lastDeleted.index, list.length);
-      list.splice.apply(list, [at, 0].concat(lastDeleted.cards));
-    }
-    hideToast();
-    commit();
-    dropUndo();
-  });
+  document.getElementById('undoBtn').addEventListener('click', undo);
 
   var menu = el('div', 'card-menu');
   menu.setAttribute('role', 'menu');
@@ -2685,8 +2710,8 @@
       open.addEventListener('click', function () { openFile(meta); });
       var drop = iconBtn('×', 'Remove ' + meta.name, 'file-drop');
       drop.addEventListener('click', function () {
-        discard({ list: item.files, index: i,
-          cards: item.files.splice(i, 1) }, 'File removed');
+        item.files.splice(i, 1);
+        discard('File removed');
       });
       chip.appendChild(open);
       chip.appendChild(drop);
@@ -4447,6 +4472,12 @@
     closeNotes();
     closeTips();
   });
+  document.addEventListener('keydown', function (e) {
+    var go = { z: undo, y: redo }[e.key];
+    if (!e.ctrlKey || !go || e.target.closest('textarea')) return;
+    e.preventDefault();
+    go();
+  });
 
   function show() {
     applyPalette(here().palette, here().turn);
@@ -4484,10 +4515,13 @@
   window.addEventListener('storage', function (e) {
     if (e.key !== STORE) return;
     state = load();
+    last = JSON.stringify(state);
+    undos = [];
+    redos = [];
+    holdFiles();
+    hideToast();
     show();
   });
-
-  window.addEventListener('pagehide', dropUndo);
 
   window.addEventListener('hashchange', function () {
     readPath();
@@ -4496,6 +4530,9 @@
 
   readPath();
   show();
+  navigator.locks.request(MY_UNDO, function () {
+    return new Promise(function () {});
+  });
   sweepFiles();
 </script>
 </body>

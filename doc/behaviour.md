@@ -16,7 +16,19 @@ The full behaviour of the board. The README keeps the short version.
 
 **Drag** moves a card within a column or to another column. A drop on the middle of another card asks first, in a small menu. On the head of a deck, a drop puts the card in the deck and does not ask. Decks, below, has the rest. A drag that starts on the grip of an item of a list moves the item, not the card. Moving items, below, has the rest.
 
-**Delete** removes a card from the board, and the bin on a note removes the note from its card. On the head of a deck, **Delete** removes the deck and every card in it. None of these asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**.
+**Delete** removes a card from the board, and the bin on a note removes the note from its card. On the head of a deck, **Delete** removes the deck and every card in it. None of these asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**. **Undo** in the toast is the same as Ctrl+Z. Undo, below, has the rest.
+
+## Undo
+
+**Ctrl+Z** takes back the last change to the board. **Ctrl+Y** brings back the last change that Ctrl+Z took back. Each press is one step. A step is each change that the board saves: a new card or note, a change of text, a drag, a click on a checkbox, a pin, a level, a deck, a fold, a file, a delete, an import or a palette.
+
+- The tab keeps the last 100 steps. Ctrl+Z goes no further back than that.
+- A new change after Ctrl+Z removes the steps that Ctrl+Y could bring back.
+- If the step is in a different board, Ctrl+Z and Ctrl+Y open that board, so you see the change.
+- In a box where you write, Ctrl+Z and Ctrl+Y work on the text in the box, as the browser does. They do not change the board.
+- **Undo** in the toast is the same as one Ctrl+Z, so Ctrl+Y brings back the delete. The toast goes when you press Ctrl+Z or make a different change.
+- The steps are in the memory of the tab. A reload or a close of the tab removes them.
+- When a different tab changes the board, this tab removes its steps. Thus Ctrl+Z cannot remove the work of the other tab.
 
 ## What the card text reads
 
@@ -145,7 +157,7 @@ A card can hold a board of its own. Such a card is a board card. The top board i
 - A board card takes no part in a deck. It cannot join a deck and it cannot head one. When you drag a board card over a card, or a card over a board card, no ring shows. The line shows, and a drop moves the card to that line. A board card dropped on the cards of a deck lands in the column next to that deck, as a head does.
 - A drop never puts a card into another board. To move a card to another board, use **Download this card**, open the other board and **Import** the file there.
 - **Delete** on a board card deletes the card and its whole board in one press. It does not ask first. The toast says how many cards went, such as `Board of 12 cards deleted`, and offers **Undo**. The number is the count of that board, with each board inside it counted as one card.
-- **Undo** puts the card back in the board it came from, even if you stepped into another board before you pressed it. This holds for every delete: **Undo** returns a card, a note, a deck or a cleared column to the board it came from.
+- **Undo** puts the card back in the board it came from, even if you stepped into another board before you pressed it. It also opens that board. This holds for every delete: **Undo** returns a card, a note, a deck or a cleared column to the board it came from.
 
 ## Export and Import
 
@@ -169,7 +181,7 @@ The palette of each board is on that board. A Mother Board saved before boards k
 
 The board keeps the notes of a card on the card, so a card is whole on its own. Notes travel with Export and Import. A delete removes the notes of the card too. Undo returns the card and the notes. A board saved before notes existed opens with no notes.
 
-The files are not in `localStorage`, which holds about 5 MB for the whole page. They are in the IndexedDB database `personal.files.v1` of the browser, which has room for gigabytes. The card or note keeps a list of its files, with the name, the type and the size of each, and the list travels with the card. When the page opens, it deletes from the database every file that the saved board does not name. So a file that you remove, and the files of a card that you delete, stay until the next time a page opens. A file in a part of the board that the page does not know stays too, because the saved board still names it. While a toast offers **Undo**, the files that **Undo** would bring back stay, whichever tab opens the page. The tab with the toast keeps a note of them in `localStorage`, under a key that starts with `personal.undo.v1.`, until the toast goes or the tab closes. A note that a closed tab left behind counts only for the 6 seconds of its toast. A board saved before files existed opens with no files.
+The files are not in `localStorage`, which holds about 5 MB for the whole page. They are in the IndexedDB database `personal.files.v1` of the browser, which has room for gigabytes. The card or note keeps a list of its files, with the name, the type and the size of each, and the list travels with the card. When the page opens, it deletes from the database every file that the saved board does not name. So a file that you remove, and the files of a card that you delete, stay until the next time a page opens. A file in a part of the board that the page does not know stays too, because the saved board still names it. While Ctrl+Z or Ctrl+Y in a tab can bring files back, those files stay, whichever tab opens the page. The tab keeps a note of them in `localStorage`, under a key that starts with `personal.undo.v1.`. While it is open, the tab also holds a browser lock with the same name. When a page opens, it removes each note that has no lock, because the tab of that note is closed. A board saved before files existed opens with no files.
 
 The cards of a deck are on its head in the same way, so a deck travels whole. A delete of the head removes its cards too, and Undo returns them. A board saved before decks existed opens with no decks.
 

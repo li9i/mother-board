@@ -20,6 +20,12 @@ To write a new card, click **+ add to backlog** or the same button in a differen
 
 For more information, refer to [doc/behaviour.md](doc/behaviour.md#cards).
 
+## Undo
+
+Ctrl+Z takes back the last change to the board, and Ctrl+Y brings it back. A change is anything that the board saves, for example a new card, a drag, a tick, a delete or a palette. The tab keeps the last 100 changes until you reload or close it. If the change is in a different board, the page opens that board. In a box where you write, Ctrl+Z takes back your typing and does not change the board. **Undo** in the toast is the same as one Ctrl+Z.
+
+For more information, refer to [doc/behaviour.md](doc/behaviour.md#undo).
+
 ## Card text
 
 The board shows Markdown in the text of a card: inline code, fenced blocks, links, headings, quotes, callouts, nested lists, checkboxes, dividers and pictures. A quote that starts with a callout word in brackets is a callout, for example `> [!warning]`. **tips** shows all the callout words.

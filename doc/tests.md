@@ -48,7 +48,7 @@ The list follows the sequence of the tests in the file.
 
 - `opening the page clears stored files that no card holds`: it makes sure that, when the page opens, it deletes each file in the database that no card holds. It also makes sure that the page keeps the other files. These include the files on cards, on notes, in boards and in parts of the board that the page does not know.
 
-- `a clean-up in another tab keeps the files of a pending undo`: it deletes a card in tab 1 and opens the board in tab 2. It then makes sure that, after **Undo** in tab 1, the card and its file are on the board again.
+- `a clean-up in another tab keeps the files that ctrl z can reach`: in tab 1, it removes a file from a card and deletes a different card with a file. It also puts in the database a file that no card holds. It then opens the board in tab 2, and makes sure that tab 2 deletes only that file. It then makes sure that, after two Ctrl+Z in tab 1, the two files are on the board again. Last, it does two Ctrl+Y and reloads tab 1, and makes sure that the two files go.
 
 - `the card menu puts the gmail note under its row and delete last`: it makes sure that, in the menu of a card, the instruction to drag the file is directly below **Send this card by Gmail**. It also makes sure that **Delete** is the last row.
 
@@ -75,5 +75,19 @@ The list follows the sequence of the tests in the file.
 - `a picture pasted in the box for a new card or note comes with it`: it pastes a picture in three boxes: for a new card, for a new note and for the text of a note. It then makes sure that each picture stays with the text when you save it. It also makes sure that Escape discards the picture.
 
 - `an image chip shows as a picture only while the text names it`: it makes sure that an attached picture stays a chip until the text gives its name. It also makes sure that the picture opens when you click it, and that the chip shows again when you remove the mark.
+
+- `ctrl z takes back each change and ctrl y brings it back`: it makes two changes, then makes sure that each Ctrl+Z takes back one change and that each Ctrl+Y brings one back. It also makes sure that a key press with no step left changes nothing. It then makes sure that a new change after Ctrl+Z stops Ctrl+Y.
+
+- `ctrl z reaches back one hundred changes and no further`: it adds 101 cards, then presses Ctrl+Z 101 times. It makes sure that one card stays.
+
+- `ctrl z takes back a palette click and marks the palette it restores`: it makes sure that Ctrl+Z takes back a click on a palette, and that the panel marks the palette that comes back. It also makes sure that Ctrl+Y brings back the click.
+
+- `ctrl z and ctrl y open the board where the change was made`: it changes a card inside a board and goes back to the Mother Board. It then makes sure that Ctrl+Z, and later Ctrl+Y, opens that board and changes the card there.
+
+- `the toast undo and ctrl z take back the same delete`: it makes sure that Ctrl+Z takes back a delete and closes the toast, and that Ctrl+Y deletes the card again. It also makes sure that a different change closes the toast, and that Ctrl+Y brings back a delete that **Undo** took back.
+
+- `ctrl z in a box leaves the board alone`: it makes sure that Ctrl+Z in the box for the text of a card, and in the box for a new card, does not change the board.
+
+- `a change in another tab clears the steps of this tab`: it makes a change in tab 1 and a change in tab 2. It then makes sure that Ctrl+Z in tab 1 changes nothing, and that Ctrl+Z in tab 2 takes back the change of tab 2.
 
 The tests examine the checksum of each file that they read from a zip. For more information, refer to [behaviour.md](behaviour.md#storage).

@@ -895,7 +895,21 @@ test('opening the page clears stored files that no card holds',
       ['card.txt', 'inside.txt', 'kept.txt', 'note.txt']);
   });
 
-test('a clean-up in another tab keeps the files of a pending undo',
+function strayFile() {
+  return new Promise((done) => {
+    const open = indexedDB.open('personal.files.v1');
+    open.onsuccess = () => {
+      const tx = open.result.transaction('files', 'readwrite');
+      tx.objectStore('files').put(new Blob(['x']), 'stray');
+      tx.oncomplete = () => {
+        open.result.close();
+        done();
+      };
+    };
+  });
+}
+
+test('a clean-up in another tab keeps the files that ctrl z can reach',
   async () => {
     const browser = launch();
     try {
@@ -912,13 +926,24 @@ test('a clean-up in another tab keeps the files of a pending undo',
         + ' [aria-label="Remove gone.txt"]\').click()');
       await one.run('document.querySelector(\'' + cardOf('a')
         + ' .menubtn\').click();' + call(choose, 'Delete'));
+      await one.run(call(strayFile));
       const before = (await one.run(call(storedKeys))).length;
       const two = await browser.open();
-      await until(async () => (await two.run(call(storedKeys))).length
-        < before);
-      await one.run('document.getElementById("undoBtn").click()');
+      const swept = await until(async () => {
+        const keys = await two.run(call(storedKeys));
+        return keys.length < before && keys.length;
+      });
+      await one.run(call(ctrlIn, 'body', 'z'));
+      await one.run(call(ctrlIn, 'body', 'z'));
+      const gone = described((await stored(one, STORE)).cols.backlog[1]);
       const opened = await one.shown(call(press, cardOf('a'), 'hello.txt'));
-      assert.strictEqual(before, 2);
+      await one.run(call(ctrlIn, 'body', 'y'));
+      await one.run(call(ctrlIn, 'body', 'y'));
+      await one.go();
+      await until(async () => !(await two.run(call(storedKeys))).length);
+      assert.strictEqual(before, 3);
+      assert.strictEqual(swept, 2);
+      assert.deepStrictEqual(gone.map((f) => f.name), ['gone.txt']);
       assert.strictEqual(opened, 'hello');
     } finally {
       await browser.close();
@@ -1522,3 +1547,235 @@ test('an image chip shows as a picture only while the text names it',
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
+
+function ctrlIn(selector, key) {
+  return !document.querySelector(selector).dispatchEvent(new KeyboardEvent(
+    'keydown', { key, ctrlKey: true, bubbles: true, cancelable: true }));
+}
+
+function lowOn(id) {
+  return 'document.querySelector(\'' + cardOf(id) + ' .lowbtn\').click()';
+}
+
+function deleteOf(id) {
+  return 'document.querySelector(\'' + cardOf(id) + ' .menubtn\').click();'
+    + call(choose, 'Delete');
+}
+
+const DEPTH = 100;
+
+test('ctrl z takes back each change and ctrl y brings it back', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, withLists('- [ ] open', COLOURS));
+    await page.go();
+    const line = async () => cardA(await stored(page, STORE)).text;
+    const out = { taken: [], lines: [] };
+    await page.run(call(clickBox, cardOf('a'), 'open'));
+    await page.run(call(clickBox, cardOf('a'), 'open'));
+    for (const key of ['z', 'z', 'z', 'y', 'y', 'y']) {
+      out.taken.push(await page.run(call(ctrlIn, 'body', key)));
+      out.lines.push(await line());
+    }
+    await page.run(call(ctrlIn, 'body', 'z'));
+    await page.run(lowOn('a'));
+    await page.run(call(ctrlIn, 'body', 'y'));
+    out.fresh = { line: await line(),
+      low: cardA(await stored(page, STORE)).low };
+    return out;
+  });
+
+  assert.deepStrictEqual(seen.taken, [true, true, true, true, true, true]);
+  assert.deepStrictEqual(seen.lines, ['- [x] open', '- [ ] open',
+    '- [ ] open', '- [x] open', '- [y] open', '- [y] open']);
+  assert.deepStrictEqual(seen.fresh, { line: '- [x] open', low: true });
+});
+
+function addCards(count) {
+  const add = Array.from(document.querySelectorAll('button'))
+    .find((b) => b.textContent.trim() === '+ add to backlog');
+  for (let i = 0; i < count; i++) {
+    add.click();
+    const box = document.querySelector('.composer.on textarea');
+    box.value = 'card ' + i;
+    box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter',
+      ctrlKey: true, bubbles: true, cancelable: true }));
+  }
+}
+
+test('ctrl z reaches back one hundred changes and no further', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, oneNote([]));
+    await page.go();
+    const count = async () => (await stored(page, STORE)).cols.backlog.length;
+    const before = await count();
+    await page.run(call(addCards, DEPTH + 1));
+    const added = await count() - before;
+    for (let i = 0; i <= DEPTH; i++) {
+      await page.run(call(ctrlIn, 'body', 'z'));
+    }
+    return { added, left: await count() - before };
+  });
+
+  assert.strictEqual(seen.added, DEPTH + 1);
+  assert.strictEqual(seen.left, seen.added - DEPTH);
+});
+
+test('ctrl z takes back a palette click and marks the palette it restores',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, Object.assign(oneNote([]), { palette: null }));
+      await page.go();
+      const on = () => page.run(
+        'document.querySelector("#palettePanel .pal.on").dataset.pal');
+      const saved = async () => (await stored(page, STORE)).palette;
+      await page.run('document.getElementById("paletteBtn").click()');
+      await page.run(
+        'document.querySelector("#palettePanel .pal.on").click()');
+      const out = { first: await on(), firstSaved: await saved() };
+      await page.run('document.querySelector('
+        + '"#palettePanel .pal[data-pal]:not(.on)").click()');
+      out.picked = await on();
+      out.pickedSaved = await saved();
+      await page.run(call(ctrlIn, 'body', 'z'));
+      out.back = await on();
+      out.backSaved = await saved();
+      await page.run(call(ctrlIn, 'body', 'y'));
+      out.again = await on();
+      out.againSaved = await saved();
+      return out;
+    });
+
+    assert.notStrictEqual(seen.picked, seen.first);
+    assert.strictEqual(seen.pickedSaved, seen.picked);
+    assert.strictEqual(seen.back, seen.first);
+    assert.strictEqual(seen.backSaved, seen.firstSaved);
+    assert.strictEqual(seen.again, seen.picked);
+    assert.strictEqual(seen.againSaved, seen.picked);
+  });
+
+test('ctrl z and ctrl y open the board where the change was made',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [], backlog: [
+          { id: 'a', text: 'card a', created: 1 },
+          { id: 'b', text: 'board b', created: 1, board: { cols: {
+            backlog: [{ id: 'i', text: 'inside', created: 1 }] } } }] } });
+      await page.go();
+      const shown = (id) => page.run('!!document.querySelector(\''
+        + cardOf(id) + '\')');
+      const low = async () => !!(await stored(page, STORE)).cols.backlog[1]
+        .board.cols.backlog[0].low;
+      const press = async (key) => {
+        await page.run('location.hash = ""');
+        await until(() => shown('a'));
+        await page.run(call(ctrlIn, 'body', key));
+        return { at: await page.run('location.hash'), low: await low(),
+          shown: await shown('i') };
+      };
+      await page.run('location.hash = "b"');
+      await until(() => shown('i'));
+      await page.run(lowOn('i'));
+      return { undone: await press('z'), redone: await press('y') };
+    });
+
+    assert.deepStrictEqual(seen.undone, { at: '#b', low: false, shown: true });
+    assert.deepStrictEqual(seen.redone, { at: '#b', low: true, shown: true });
+  });
+
+test('the toast undo and ctrl z take back the same delete', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, oneNote([{ id: 'b', text: 'card b',
+      created: 1 }]));
+    await page.go();
+    const look = async () => {
+      const saved = await stored(page, STORE);
+      return {
+        cards: saved.cols.backlog.map((c) => c.id + (c.low ? ' low' : '')),
+        toast: await page.run(
+          'document.getElementById("toast").classList.contains("on")')
+      };
+    };
+    const out = [];
+    const step = async (what) => {
+      await page.run(what);
+      out.push(await look());
+    };
+    await step(deleteOf('a'));
+    await step(call(ctrlIn, 'body', 'z'));
+    await step(call(ctrlIn, 'body', 'y'));
+    await step(call(ctrlIn, 'body', 'z'));
+    await step(deleteOf('a'));
+    await step(lowOn('b'));
+    await step(call(ctrlIn, 'body', 'z'));
+    await step(call(ctrlIn, 'body', 'z'));
+    await step(deleteOf('b'));
+    await step('document.getElementById("undoBtn").click()');
+    await step(call(ctrlIn, 'body', 'y'));
+    return out;
+  });
+
+  const both = { cards: ['a', 'b'], toast: false };
+  assert.deepStrictEqual(seen, [
+    { cards: ['b'], toast: true },
+    both,
+    { cards: ['b'], toast: false },
+    both,
+    { cards: ['b'], toast: true },
+    { cards: ['b low'], toast: false },
+    { cards: ['b'], toast: false },
+    both,
+    { cards: ['a'], toast: true },
+    both,
+    { cards: ['a'], toast: false }
+  ]);
+});
+
+test('ctrl z in a box leaves the board alone', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, oneNote([]));
+    await page.go();
+    await page.run(lowOn('a'));
+    const low = async () => cardA(await stored(page, STORE)).low;
+    await page.run(call(editCard, 'a'));
+    const out = { inEdit: await page.run(
+      call(ctrlIn, WHAT_EDIT, 'z')) };
+    out.lowAfterEdit = await low();
+    await page.run(call(keyIn, WHAT_EDIT, 'Escape'));
+    await page.run(call(keyIn, 'body', 'Escape'));
+    await page.run(call(clickButton, '+ add to backlog'));
+    out.inNew = await page.run(call(ctrlIn, '.composer.on textarea', 'z'));
+    out.lowAfterNew = await low();
+    return out;
+  });
+
+  assert.deepStrictEqual(seen, { inEdit: false, lowAfterEdit: true,
+    inNew: false, lowAfterNew: true });
+});
+
+test('a change in another tab clears the steps of this tab', async () => {
+  const browser = launch();
+  try {
+    const one = await browser.open();
+    await seed(one, STORE, oneNote([{ id: 'b', text: 'card b',
+      created: 1 }]));
+    await one.go();
+    const two = await browser.open();
+    const lows = async () => Object.fromEntries((await stored(one, STORE))
+      .cols.backlog.map((c) => [c.id, !!c.low]));
+    await one.run(lowOn('a'));
+    await until(() => two.run('document.querySelector(\'' + cardOf('a')
+      + '\').classList.contains("low")'));
+    await two.run(lowOn('b'));
+    await until(() => one.run('document.querySelector(\'' + cardOf('b')
+      + '\').classList.contains("low")'));
+    await one.run(call(ctrlIn, 'body', 'z'));
+    const inOne = await lows();
+    await two.run(call(ctrlIn, 'body', 'z'));
+    const inTwo = await lows();
+    assert.deepStrictEqual(inOne, { a: true, b: true });
+    assert.deepStrictEqual(inTwo, { a: true, b: false });
+  } finally {
+    await browser.close();
+  }
+});
