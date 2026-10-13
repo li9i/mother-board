@@ -46,6 +46,8 @@ The list follows the sequence of the tests in the file.
 
 - `import reads a zip that another program packed again`: it makes the card zip again, as a different program can do, with compressed files in one more folder. It then makes sure that **Import** reads the zip.
 
+- `a card import adds the card without asking`: it makes sure that **Import** of one card puts the card on the board and does not ask first.
+
 - `opening the page clears stored files that no card holds`: it makes sure that, when the page opens, it deletes each file in the database that no card holds. It also makes sure that the page keeps the other files. These include the files on cards, on notes, in boards and in parts of the board that the page does not know.
 
 - `a clean-up in another tab keeps the files that ctrl z can reach`: in tab 1, it removes a file from a card and deletes a different card with a file. It also puts in the database a file that no card holds. It then opens the board in tab 2, and makes sure that tab 2 deletes only that file. It then makes sure that, after two Ctrl+Z in tab 1, the two files are on the board again. Last, it does two Ctrl+Y and reloads tab 1, and makes sure that the two files go.

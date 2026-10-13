@@ -4065,10 +4065,6 @@
     if (!arriving.length) throw new Error('bad shape');
     var card = reid(arriving[0]);
     var col = colOf(parsed.col) || colOf('backlog');
-    var what = card.cards.length ? 'this deck of ' + plural(card.cards.length + 1, 'card') : 'this card';
-    var brought = card.notes.length ? ' and ' + plural(card.notes.length, 'note') : '';
-    var says = card.text.length > 60 ? card.text.slice(0, 60) + '...' : card.text;
-    if (!confirm('Add ' + what + brought + ' to ' + col.label + '?\n\n' + says)) return;
     unpack(blobs, entries).then(function () {
       here().cols[col.key].push(card);
       commit();

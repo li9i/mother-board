@@ -802,7 +802,6 @@ test('import reads a zip that another program packed again', async () => {
       await seed(page, STORE, { cols: { remember: [], backlog: [], now: [],
         accomplished: [] } });
       await page.go();
-      await page.run('window.confirm = () => true');
       await page.chosen('document.getElementById("importBtn").click()',
         [file]);
       const files = await filesOf(page, (saved) => saved.cols.backlog[0]);
@@ -817,6 +816,38 @@ test('import reads a zip that another program packed again', async () => {
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+async function cardFiles(cards, work) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cards-'));
+  try {
+    return await work(cards.map((card, i) => {
+      const file = path.join(dir, i + '.json');
+      fs.writeFileSync(file, JSON.stringify({ card, col: 'now' }));
+      return file;
+    }));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('a card import adds the card without asking', async () => {
+  const seen = await cardFiles([{ id: 'x', text: 'card x', created: 5 }],
+    ([file]) => inPage(async (page) => {
+      await seed(page, STORE, oneNote([]));
+      await page.go();
+      await page.run('window.confirm = () => { window.asked = true; }');
+      await page.chosen('document.getElementById("importBtn").click()',
+        [file]);
+      return {
+        now: await until(async () => (await stored(page, STORE)).cols.now
+          .map((c) => c.text).join()),
+        asked: await page.run('!!window.asked')
+      };
+    }));
+
+  assert.strictEqual(seen.now, 'card x');
+  assert.strictEqual(seen.asked, false);
 });
 
 function storedKeys() {
