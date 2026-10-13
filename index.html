@@ -2345,7 +2345,7 @@
 
   function discard(msg) {
     commit();
-    showToast(msg);
+    showToast(msg, true);
   }
 
   function removeCard(id) {
@@ -2380,8 +2380,9 @@
 
   var toast = document.getElementById('toast');
 
-  function showToast(msg) {
+  function showToast(msg, undoable) {
     document.getElementById('toastMsg').textContent = msg;
+    document.getElementById('undoBtn').hidden = !undoable;
     toast.classList.add('on');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(hideToast, UNDO_TIME);
@@ -4063,6 +4064,10 @@
   function importCard(parsed, blobs, entries) {
     var arriving = normalize([parsed.card]);
     if (!arriving.length) throw new Error('bad shape');
+    if (onBoard(arriving[0])) {
+      showToast(ON_BOARD, false);
+      return;
+    }
     var card = reid(arriving[0]);
     var col = colOf(parsed.col) || colOf('backlog');
     unpack(blobs, entries).then(function () {
@@ -4076,6 +4081,7 @@
     fileInput.click();
   });
   var NOT_EXPORT = "That file doesn't look like a personal board export.";
+  var ON_BOARD = 'That card is already on the board.';
 
   function importZip(f) {
     unzip(f).then(function (found) {
@@ -4093,6 +4099,16 @@
         readExport(JSON.parse(text), entries);
       });
     }).catch(function () { alert(NOT_EXPORT); });
+  }
+
+  function onBoard(card) {
+    return KEYS.some(function (k) {
+      return here().cols[k].some(function (c) {
+        return [c].concat(c.cards).some(function (one) {
+          return one.text === card.text && one.created === card.created;
+        });
+      });
+    });
   }
 
   function readExport(parsed, entries) {

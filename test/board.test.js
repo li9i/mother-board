@@ -850,6 +850,48 @@ test('a card import adds the card without asking', async () => {
   assert.strictEqual(seen.asked, false);
 });
 
+function toastShown() {
+  const msg = document.getElementById('toastMsg').textContent;
+  return msg && { msg,
+    undo: document.getElementById('undoBtn').checkVisibility() };
+}
+
+test('an import skips a card that is already on the board', async () => {
+  const seen = await cardFiles([
+    { id: 'z', text: 'card a', created: 1 },
+    { id: 'c', text: 'card c', created: 3 },
+    { id: 'y', text: 'card a', created: 9 }
+  ], (files) => inPage(async (page) => {
+    await seed(page, STORE, oneNote([{ id: 'd', text: 'deck d', created: 2,
+      cards: [{ id: 'c', text: 'card c', created: 3 }] }]));
+    await page.go();
+    const toast = async (act) => {
+      await page.run('document.getElementById("toastMsg").textContent = ""');
+      await act();
+      return until(() => page.run(call(toastShown)));
+    };
+    const pick = (file) => () => page.chosen(
+      'document.getElementById("importBtn").click()', [file]);
+    const out = { toasts: [await toast(pick(files[0])),
+      await toast(pick(files[1]))] };
+    await pick(files[2])();
+    await until(async () => (await stored(page, STORE)).cols.now.length);
+    out.toasts.push(await toast(pick(files[2])));
+    const saved = await stored(page, STORE);
+    out.backlog = saved.cols.backlog.map((c) => c.id);
+    out.now = saved.cols.now.map((c) => c.text + ' ' + c.created);
+    out.deleted = await toast(() => page.run('document.querySelector(\''
+      + cardOf('a') + ' .menubtn\').click();' + call(choose, 'Delete')));
+    return out;
+  }));
+
+  const already = { msg: 'That card is already on the board.', undo: false };
+  assert.deepStrictEqual(seen.toasts, [already, already, already]);
+  assert.deepStrictEqual(seen.backlog, ['a', 'd']);
+  assert.deepStrictEqual(seen.now, ['card a 9']);
+  assert.strictEqual(seen.deleted.undo, true);
+});
+
 function storedKeys() {
   return new Promise((done) => {
     const open = indexedDB.open('personal.files.v1');
