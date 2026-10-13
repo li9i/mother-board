@@ -8,7 +8,7 @@ This is a board for one person in one HTML file, with the four columns Remember,
 
 Open `index.html` in a browser. You can open it from a `file://` address. You do not install or build anything, and the board does not use a server. The board stays in this browser only. To keep a copy, or to move the board to a different machine, use **Export**.
 
-The line below the heading shows `drag cards between columns · double-click a card to edit · hover for more options`. The **tips** button opens a window about callouts and the **burst** switch.
+The line below the heading shows `drag cards between columns · double-click a card to edit · hover for more options · ctrl z to undo · ctrl y to redo`. The **tips** button opens a window about callouts and the **burst** switch.
 
 For more information, refer to [doc/behaviour.md](doc/behaviour.md#tips).
 
