@@ -22,7 +22,7 @@ For more information, refer to [doc/behaviour.md](doc/behaviour.md#cards).
 
 ## Undo
 
-Ctrl+Z takes back the last change to the board, and Ctrl+Y brings it back. A change is anything that the board saves, for example a new card, a drag, a tick, a delete or a palette. The tab keeps the last 100 changes until you reload or close it. If the change is in a different board, the page opens that board. In a box where you write, Ctrl+Z takes back your typing and does not change the board. **Undo** in the toast is the same as one Ctrl+Z.
+Ctrl+Z takes back the last change to the board, and Ctrl+Y brings it back. A change is anything that the board saves except a fold, for example a new card, a drag, a tick, a delete or a palette. Ctrl+Z keeps the folds as they are. The tab keeps the last 100 changes until you reload or close it. If the change is in a different board, the page opens that board. In a box where you write, Ctrl+Z takes back your typing and does not change the board. **Undo** in the toast is the same as one Ctrl+Z.
 
 For more information, refer to [doc/behaviour.md](doc/behaviour.md#undo).
 

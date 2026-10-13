@@ -90,4 +90,6 @@ The list follows the sequence of the tests in the file.
 
 - `a change in another tab clears the steps of this tab`: it makes a change in tab 1 and a change in tab 2. It then makes sure that Ctrl+Z in tab 1 changes nothing, and that Ctrl+Z in tab 2 takes back the change of tab 2.
 
+- `a fold is no step and ctrl z leaves the folds alone`: it changes the level of a card and then folds a deck. It makes sure that Ctrl+Z takes back the level and keeps the fold, and that Ctrl+Y does the same. It then unfolds the deck and makes sure that Ctrl+Z keeps the deck open.
+
 The tests examine the checksum of each file that they read from a zip. For more information, refer to [behaviour.md](behaviour.md#storage).

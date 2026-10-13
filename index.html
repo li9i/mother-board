@@ -1483,6 +1483,7 @@
   var UNDO_TIME = 6000;
   var STEPS = 100;
   var IDS = /"id":"[^"]*"/g;
+  var FOLDS = ['folded', 'doneFolded'];
   var ATTACH = 'Attach a file';
   var SHOWN = /^(image\/(?!svg)|audio\/|video\/|application\/pdf$|text\/plain$)/;
   var IMAGE = /^image\//;
@@ -1815,13 +1816,13 @@
     undos = undos.concat(stepOf(path)).slice(-STEPS);
     redos = [];
     keepBoard(now);
+    hideToast();
   }
 
   function keepBoard(board) {
     last = board;
     lsSet(STORE, board);
     holdFiles();
-    hideToast();
   }
 
   function stepOf(where) {
@@ -1847,12 +1848,32 @@
     var step = from.pop();
     if (!step) return;
     to.push(stepOf(step.path));
-    state = JSON.parse(step.board);
-    keepBoard(step.board);
+    state = keepFolds(JSON.parse(step.board));
+    keepBoard(JSON.stringify(state));
+    hideToast();
     path = step.path;
     enter(path);
     show();
     markPalettes();
+  }
+
+  function keepFolds(board) {
+    var now = {};
+    cardsOf(state).forEach(function (c) { now[c.id] = c; });
+    cardsOf(board).forEach(function (c) {
+      var was = now[c.id];
+      if (!was) return;
+      FOLDS.forEach(function (key) { c[key] = was[key]; });
+    });
+    return board;
+  }
+
+  function cardsOf(board) {
+    return KEYS.reduce(function (out, k) {
+      return board.cols[k].reduce(function (all, c) {
+        return all.concat(c, c.cards, c.board ? cardsOf(c.board) : []);
+      }, out);
+    }, []);
   }
 
   function undo() {
@@ -3156,7 +3177,8 @@
     fold.appendChild(icon('chev'));
     fold.addEventListener('click', function () {
       card[key] = !card[key];
-      commit();
+      keepBoard(JSON.stringify(state));
+      render();
     });
     return fold;
   }

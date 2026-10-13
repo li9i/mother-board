@@ -1779,3 +1779,34 @@ test('a change in another tab clears the steps of this tab', async () => {
     await browser.close();
   }
 });
+
+test('a fold is no step and ctrl z leaves the folds alone', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, oneNote([{ id: 'h', text: 'head', created: 1,
+      cards: [{ id: 'k', text: 'kid', created: 1 }] }]));
+    await page.go();
+    const fold = 'document.querySelector(\'.deck[data-id="h"] '
+      + '[aria-label$="the deck"]\').click()';
+    const look = async () => {
+      const saved = (await stored(page, STORE)).cols.backlog;
+      return { low: !!saved.find((c) => c.id === 'a').low,
+        folded: !!saved.find((c) => c.id === 'h').folded };
+    };
+    const out = [];
+    for (const what of [lowOn('a'), fold, call(ctrlIn, 'body', 'z'),
+      call(ctrlIn, 'body', 'y'), fold, call(ctrlIn, 'body', 'z')]) {
+      await page.run(what);
+      out.push(await look());
+    }
+    return out;
+  });
+
+  assert.deepStrictEqual(seen, [
+    { low: true, folded: false },
+    { low: true, folded: true },
+    { low: false, folded: true },
+    { low: true, folded: true },
+    { low: true, folded: false },
+    { low: false, folded: false }
+  ]);
+});

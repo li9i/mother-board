@@ -20,7 +20,7 @@ The full behaviour of the board. The README keeps the short version.
 
 ## Undo
 
-**Ctrl+Z** takes back the last change to the board. **Ctrl+Y** brings back the last change that Ctrl+Z took back. Each press is one step. A step is each change that the board saves: a new card or note, a change of text, a drag, a click on a checkbox, a pin, a level, a deck, a fold, a file, a delete, an import or a palette.
+**Ctrl+Z** takes back the last change to the board. **Ctrl+Y** brings back the last change that Ctrl+Z took back. Each press is one step. A step is each change that the board saves, except a fold: a new card or note, a change of text, a drag, a click on a checkbox, a pin, a level, a deck, a file, a delete, an import or a palette. Ctrl+Z and Ctrl+Y keep each deck folded or open, as it is when you press the key.
 
 - The tab keeps the last 100 steps. Ctrl+Z goes no further back than that.
 - A new change after Ctrl+Z removes the steps that Ctrl+Y could bring back.
