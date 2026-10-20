@@ -18,7 +18,11 @@ The list follows the sequence of the tests in the file.
 
 - `a save keeps the parts the page does not know`: it makes sure that, when the page saves a board, it keeps the parts of the board that it does not know.
 
-- `the first load moves the board and leaves a sign`: it makes sure that, when the page loads for the first time, it moves the board from `personal.board.v1` to `personal.board.v2`. It also makes sure that the page puts a sign in `personal.board.v1`.
+- `the first load moves the board and leaves a sign`: it makes sure that, when the page loads for the first time, it moves the board from `personal.board.v1` to `mother.board.v1`. It also makes sure that the page puts a sign in `personal.board.v1`.
+
+- `a board under the personal name moves and signs both old keys`: it makes sure that the page moves the board from `personal.board.v2` to `mother.board.v1`. It also makes sure that the page puts a sign in `personal.board.v2` and in `personal.board.v1`.
+
+- `the burst and fold settings move from the personal names`: it makes sure that the page reads the **burst** switch and the hidden head of the page from their old keys, `personal.burst.v1` and `personal.fold.v1`.
 
 - `a board card steps in by its tab and edits by its name`: it makes sure that a board card shows only its name and a count, for example `3 of 9 done`. It also makes sure that the tab opens the board, and that you can double-click the name to change the text of the card.
 
@@ -53,6 +57,10 @@ The list follows the sequence of the tests in the file.
 - `opening the page clears stored files that no card holds`: it makes sure that, when the page opens, it deletes each file in the database that no card holds. It also makes sure that the page keeps the other files. These include the files on cards, on notes, in boards and in parts of the board that the page does not know.
 
 - `a clean-up in another tab keeps the files that ctrl z can reach`: in tab 1, it removes a file from a card and deletes a different card with a file. It also puts in the database a file that no card holds. It then opens the board in tab 2, and makes sure that tab 2 deletes only that file. It then makes sure that, after two Ctrl+Z in tab 1, the two files are on the board again. Last, it does two Ctrl+Y and reloads tab 1, and makes sure that the two files go.
+
+- `files under the personal name move to the new store`: it puts a file in the database `personal.files.v1`. It then makes sure that, when the page opens, the chip of the file opens the file from `mother.files.v1`. It also makes sure that the page deletes `personal.files.v1`.
+
+- `an undo note under the personal name goes once its tab is closed`: it makes sure that, when the page opens, it removes a note for Ctrl+Z under `personal.undo.v1.` that holds no lock.
 
 - `the card menu puts the gmail note under its row and delete last`: it makes sure that, in the menu of a card, the instruction to drag the file is directly below **Send this card by Gmail**. It also makes sure that **Delete** is the last row.
 

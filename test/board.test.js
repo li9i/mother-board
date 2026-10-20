@@ -7,8 +7,11 @@ const path = require('node:path');
 const zlib = require('node:zlib');
 
 const PAGE = 'file://' + path.join(__dirname, '..', 'index.html');
-const STORE = 'personal.board.v2';
+const STORE = 'mother.board.v1';
+const LAST_STORE = 'personal.board.v2';
 const OLD_STORE = 'personal.board.v1';
+const FILES = 'mother.files.v1';
+const OLD_FILES = 'personal.files.v1';
 
 function launch() {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'board-'));
@@ -219,10 +222,47 @@ test('the first load moves the board and leaves a sign', async () => {
 
   assert.strictEqual(seen.moved.cols.backlog[0].text, 'carried over');
   assert.strictEqual(seen.shown, true);
-  [seen.sign.cols.remember, seen.sign.cols.waiting].forEach((list) => {
+  signed(seen.sign);
+});
+
+function signed(board) {
+  [board.cols.remember, board.cols.waiting].forEach((list) => {
     assert.strictEqual(list.length, 1);
     assert.match(list[0].text, /^This copy of the page is out of date\./);
   });
+}
+
+test('a board under the personal name moves and signs both old keys',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, LAST_STORE, {
+        cols: { backlog: [{ id: 'moved', text: 'carried over', created: 1 }] }
+      });
+      await seed(page, OLD_STORE, { cols: { remember: [
+        { id: 'old', text: 'an older sign', created: 1 }] } });
+      await page.go();
+      return {
+        moved: await stored(page, STORE),
+        signs: [await stored(page, LAST_STORE), await stored(page, OLD_STORE)]
+      };
+    });
+
+    assert.strictEqual(seen.moved.cols.backlog[0].text, 'carried over');
+    seen.signs.forEach(signed);
+  });
+
+test('the burst and fold settings move from the personal names', async () => {
+  const seen = await inPage(async (page) => {
+    await page.run('localStorage.setItem("personal.burst.v1", "1");'
+      + 'localStorage.setItem("personal.fold.v1", "1")');
+    await page.go();
+    await page.run('document.querySelector(".addbtn").click()');
+    return page.run('[document.body.classList.contains("folded"),'
+      + ' document.querySelector(".composer .burst").classList'
+      + '.contains("on")]');
+  });
+
+  assert.deepStrictEqual(seen, [true, true]);
 });
 
 test('a board card steps in by its tab and edits by its name', async () => {
@@ -602,7 +642,7 @@ function unzipped(zip) {
   return out;
 }
 
-const ZIP = /^personal-board-card-\d+\.zip$/;
+const ZIP = /^mother-board-card-\d+\.zip$/;
 
 async function twoFiles(page) {
   await seed(page, STORE, oneNote([]));
@@ -619,7 +659,7 @@ test('export carries the files in a zip and import brings them back',
       return {
         board: await page.saved('document.getElementById("exportBtn")'
           + '.click();' + call(choose, 'Download the board'),
-          /^personal-board-\d+\.zip$/, null),
+          /^mother-board-\d+\.zip$/, null),
         card: await page.saved('document.querySelector(\'' + cardOf('a')
           + ' .menubtn\').click();' + call(choose, 'Download this card'),
           ZIP, null)
@@ -682,7 +722,7 @@ test('send by gmail downloads one zip and names the files', async () => {
   assert.strictEqual(seen.zip['card a/data.bin'], 'raw bytes');
   assert.strictEqual(seen.listed.length, 1);
   assert.match(seen.body,
-    /^The card is in the file personal-board-card-\d+\.zip\./);
+    /^The card is in the file mother-board-card-\d+\.zip\./);
   assert.doesNotMatch(seen.body, /attached/);
   assert.match(seen.body,
     /\nIts files come with it: hello\.txt, data\.bin\.\n$/);
@@ -741,7 +781,7 @@ test('a card or a board with no files still downloads as a zip',
           ZIP, null)),
         board: unzipped(await page.saved('document.getElementById('
           + '"exportBtn").click();' + call(choose, 'Download the board'),
-          /^personal-board-\d+\.zip$/, null))
+          /^mother-board-\d+\.zip$/, null))
       };
     });
 
@@ -798,7 +838,7 @@ test('import reads a zip that another program packed again', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'files-'));
   const file = path.join(dir, 'again.zip');
   fs.writeFileSync(file, repacked(Object.fromEntries(Object.entries(zip)
-    .map(([name, text]) => ['personal-board-card/' + name, text]))));
+    .map(([name, text]) => ['mother-board-card/' + name, text]))));
   try {
     const seen = await inPage(async (page) => {
       await seed(page, STORE, { cols: { remember: [], backlog: [], now: [],
@@ -894,9 +934,9 @@ test('an import skips a card that is already on the board', async () => {
   assert.strictEqual(seen.deleted.undo, true);
 });
 
-function storedKeys() {
+function storedKeys(name) {
   return new Promise((done) => {
-    const open = indexedDB.open('personal.files.v1');
+    const open = indexedDB.open(name);
     open.onsuccess = () => {
       const all = open.result.transaction('files').objectStore('files')
         .getAllKeys();
@@ -956,10 +996,10 @@ test('opening the page clears stored files that no card holds',
         if (value && value.name && value.id) ids[value.id] = value.name;
         return value;
       });
-      const before = (await page.run(call(storedKeys))).length;
+      const before = (await page.run(call(storedKeys, FILES))).length;
       await page.go();
       const after = await until(async () => {
-        const keys = await page.run(call(storedKeys));
+        const keys = await page.run(call(storedKeys, FILES));
         return keys.length < before && keys;
       });
       return { before, after: after.map((id) => ids[id]).sort() };
@@ -970,9 +1010,10 @@ test('opening the page clears stored files that no card holds',
       ['card.txt', 'inside.txt', 'kept.txt', 'note.txt']);
   });
 
-function strayFile() {
+function strayFile(name) {
   return new Promise((done) => {
-    const open = indexedDB.open('personal.files.v1');
+    const open = indexedDB.open(name, 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('files');
     open.onsuccess = () => {
       const tx = open.result.transaction('files', 'readwrite');
       tx.objectStore('files').put(new Blob(['x']), 'stray');
@@ -1001,11 +1042,11 @@ test('a clean-up in another tab keeps the files that ctrl z can reach',
         + ' [aria-label="Remove gone.txt"]\').click()');
       await one.run('document.querySelector(\'' + cardOf('a')
         + ' .menubtn\').click();' + call(choose, 'Delete'));
-      await one.run(call(strayFile));
-      const before = (await one.run(call(storedKeys))).length;
+      await one.run(call(strayFile, FILES));
+      const before = (await one.run(call(storedKeys, FILES))).length;
       const two = await browser.open();
       const swept = await until(async () => {
-        const keys = await two.run(call(storedKeys));
+        const keys = await two.run(call(storedKeys, FILES));
         return keys.length < before && keys.length;
       });
       await one.run(call(ctrlIn, 'body', 'z'));
@@ -1015,7 +1056,7 @@ test('a clean-up in another tab keeps the files that ctrl z can reach',
       await one.run(call(ctrlIn, 'body', 'y'));
       await one.run(call(ctrlIn, 'body', 'y'));
       await one.go();
-      await until(async () => !(await two.run(call(storedKeys))).length);
+      await until(async () => !(await two.run(call(storedKeys, FILES))).length);
       assert.strictEqual(before, 3);
       assert.strictEqual(swept, 2);
       assert.deepStrictEqual(gone.map((f) => f.name), ['gone.txt']);
@@ -1023,6 +1064,42 @@ test('a clean-up in another tab keeps the files that ctrl z can reach',
     } finally {
       await browser.close();
     }
+  });
+
+function databases() {
+  return indexedDB.databases().then((all) => all.map((db) => db.name));
+}
+
+test('files under the personal name move to the new store', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, oneNote([{ id: 'b', text: 'card b',
+      created: 1, files: [{ id: 'stray', name: 'stray.txt',
+        type: 'text/plain', size: 1 }] }]));
+    await page.run(call(strayFile, OLD_FILES));
+    await page.go();
+    return {
+      opened: await page.shown(call(press, cardOf('b'), 'stray.txt')),
+      left: await until(async () => {
+        const names = await page.run(call(databases));
+        return !names.includes(OLD_FILES) && names;
+      })
+    };
+  });
+
+  assert.strictEqual(seen.opened, 'x');
+  assert.deepStrictEqual(seen.left, [FILES]);
+});
+
+test('an undo note under the personal name goes once its tab is closed',
+  async () => {
+    const left = await inPage(async (page) => {
+      await page.run('localStorage.setItem("personal.undo.v1.gone", "x")');
+      await page.go();
+      return until(() => page.run(
+        'localStorage.getItem("personal.undo.v1.gone") === null'));
+    });
+
+    assert.strictEqual(left, true);
   });
 
 function menuRows() {

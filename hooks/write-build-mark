@@ -8,7 +8,7 @@ full=$(git rev-parse HEAD)
 cat > build.js <<EOF
 (function () {
   var mark = document.getElementById('buildMark');
-  mark.href = 'https://github.com/li9i/personal-board/commit/$full';
+  mark.href = 'https://github.com/li9i/mother-board/commit/$full';
   mark.textContent = '$short';
 })();
 EOF

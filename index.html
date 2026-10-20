@@ -1391,7 +1391,7 @@
   <header id="pagehead">
     <div class="head-of">
       <div>
-        <div class="eyebrow">personal / board</div>
+        <div class="eyebrow">mother / board</div>
         <h1 id="trail">Mother Board</h1>
         <div class="hintline">drag cards between columns <span class="toolsep">·</span> double-click a card to edit <span class="toolsep">·</span> hover for more options <span class="toolsep">·</span> ctrl-z/y to undo/redo</div>
       </div>
@@ -1419,7 +1419,7 @@
 
   <div class="board" id="board"></div>
 
-  <footer class="build"><a id="buildMark" href="https://github.com/li9i/personal-board" target="_blank" rel="noreferrer">personal-board</a></footer>
+  <footer class="build"><a id="buildMark" href="https://github.com/li9i/mother-board" target="_blank" rel="noreferrer">mother-board</a></footer>
   <script src="stamp.js"></script>
   <script src="build.js"></script>
 
@@ -1473,11 +1473,13 @@
   var KEYS = COLUMNS.map(function (c) { return c.key; });
   var PAL_COLUMNS = COLUMNS.filter(function (c) { return c.palette; });
 
-  var STORE = 'personal.board.v2';
+  var STORE = 'mother.board.v1';
   var PAL_KEY = 'personal.palette.v1';
   var TURN_KEY = 'personal.palturn.v1';
-  var BURST_KEY = 'personal.burst.v1';
-  var OLD_STORES = ['personal.board.v1', 'todo.board.v1', 'backlog.board.v1'];
+  var BURST_KEY = 'mother.burst.v1';
+  var OLD_BURST_KEYS = ['personal.burst.v1'];
+  var SIGNED = ['personal.board.v2', 'personal.board.v1'];
+  var OLD_STORES = SIGNED.concat(['todo.board.v1', 'backlog.board.v1']);
   var SIGN = 'This copy of the page is out of date.\n\n'
     + 'Your board is safe. Open the newest copy of the page to see it.\n\n'
     + 'What you add here stays in this copy.';
@@ -1486,8 +1488,10 @@
   var OLD_COLS = ['later', 'waiting', GONE_KEY];
   var CARD_PARTS = ['id', 'text', 'created', 'pinned', 'low', 'swept',
     'notes', 'cards', 'folded', 'doneFolded', 'board', 'files'];
-  var FILES = 'personal.files.v1';
-  var UNDOS = 'personal.undo.v1.';
+  var FILES = 'mother.files.v1';
+  var OLD_FILES = 'personal.files.v1';
+  var UNDOS = 'mother.undo.v1.';
+  var OLD_UNDOS = 'personal.undo.v1.';
   var MY_UNDO = UNDOS + uid();
   var UNDO_TIME = 6000;
   var STEPS = 100;
@@ -1647,18 +1651,47 @@
   }
 
   function fileStore(mode, work) {
-    filesDb = filesDb || new Promise(function (done) {
-      var req = indexedDB.open(FILES, 1);
+    filesDb = filesDb || openFiles(FILES).then(carryFiles);
+    return filesDb.then(function (db) { return inFiles(db, mode, work); });
+  }
+
+  function openFiles(name) {
+    return new Promise(function (done) {
+      var req = indexedDB.open(name, 1);
       req.onupgradeneeded = function () {
         req.result.createObjectStore('files');
       };
       req.onsuccess = function () { done(req.result); };
     });
-    return filesDb.then(function (db) {
-      return new Promise(function (done) {
-        var tx = db.transaction('files', mode);
-        var req = work(tx.objectStore('files'));
-        tx.oncomplete = function () { done(req.result); };
+  }
+
+  function inFiles(db, mode, work) {
+    return new Promise(function (done) {
+      var tx = db.transaction('files', mode);
+      var req = work(tx.objectStore('files'));
+      tx.oncomplete = function () { done(req.result); };
+    });
+  }
+
+  function carryFiles(db) {
+    return indexedDB.databases().then(function (all) {
+      if (!pick(all, function (d) { return d.name === OLD_FILES; })) return db;
+      return openFiles(OLD_FILES).then(function (old) {
+        var blobs;
+        return inFiles(old, 'readonly', function (store) {
+          blobs = store.getAll();
+          return store.getAllKeys();
+        }).then(function (ids) {
+          old.close();
+          return Promise.all(ids.map(function (id, i) {
+            return inFiles(db, 'readwrite', function (store) {
+              return store.put(blobs.result[i], id);
+            });
+          }));
+        });
+      }).then(function () {
+        indexedDB.deleteDatabase(OLD_FILES);
+        return db;
       });
     });
   }
@@ -1666,7 +1699,7 @@
   function pendingUndos(live) {
     var held = '';
     Object.keys(localStorage).forEach(function (key) {
-      if (key.indexOf(UNDOS) !== 0) return;
+      if (key.indexOf(UNDOS) !== 0 && key.indexOf(OLD_UNDOS) !== 0) return;
       if (pick(live, function (lock) { return lock.name === key; })) {
         held += lsGet(key);
       } else lsDel(key);
@@ -1706,7 +1739,7 @@
     var sign = blank();
     sign.cols.remember.push(newItem(SIGN, []));
     sign.cols.waiting = sign.cols.remember;
-    lsSet(OLD_STORES[0], JSON.stringify(sign));
+    SIGNED.forEach(function (key) { lsSet(key, JSON.stringify(sign)); });
   }
 
   carry();
@@ -1940,7 +1973,7 @@
     return null;
   }
 
-  var burst = lsGet(BURST_KEY) === '1';
+  var burst = readCarried(BURST_KEY, OLD_BURST_KEYS) === '1';
 
   function makeComposer(host, spec) {
     var add = textBtn('addbtn', spec.add);
@@ -4008,7 +4041,7 @@
   function exportCard(id) {
     var found = find(id);
     if (!found) return;
-    return download('personal-board-card',
+    return download('mother-board-card',
       { card: found.card, col: found.col });
   }
 
@@ -4016,14 +4049,14 @@
     var names = files.map(function (f) { return f.name; }).join(', ');
     var url = GMAIL + '&su=' + encodeURIComponent(subject)
       + '&body=' + encodeURIComponent(what + ' is in the file ' + file
-        + '.\n\nOpen a personal board and press import to read it.\n'
+        + '.\n\nOpen a Mother Board and press import to read it.\n'
         + (names ? '\nIts files come with it: ' + names + '.\n' : ''));
     var tab = window.open(url, '_blank');
     if (tab) tab.opener = null;
   }
 
   function mailBoard() {
-    gmail('My personal board', 'My board', download('personal-board', here()),
+    gmail('My Mother Board', 'My board', download('mother-board', here()),
       []);
   }
 
@@ -4031,7 +4064,7 @@
     var found = find(id);
     if (!found) return;
     var title = cardTitle(found.card);
-    gmail('Personal board card' + (title ? ': ' + title : '')
+    gmail('Mother Board card' + (title ? ': ' + title : '')
       + ' (' + found.card.id + ')', 'The card', exportCard(id),
       cardFiles(found.card));
   }
@@ -4044,7 +4077,7 @@
     if (mine) return;
     openMenu(null, exportBtn, [
       { icon: 'down', title: 'Download the board',
-        onClick: function () { download('personal-board', here()); } },
+        onClick: function () { download('mother-board', here()); } },
       { icon: 'mail', title: 'Send the board by Gmail', onClick: mailBoard,
         cap: 'Gmail opens with the board downloaded.'
           + ' Drag the file onto the message.' }
@@ -4104,7 +4137,7 @@
   document.getElementById('importBtn').addEventListener('click', function () {
     fileInput.click();
   });
-  var NOT_EXPORT = "That file doesn't look like a personal board export.";
+  var NOT_EXPORT = "That file doesn't look like a Mother Board export.";
   var ON_BOARD = 'That card is already on the board.';
 
   function importZip(f) {
@@ -4550,7 +4583,8 @@
   window.addEventListener('scroll', markStuck, { passive: true });
   markStuck();
 
-  var FOLD_KEY = 'personal.fold.v1';
+  var FOLD_KEY = 'mother.fold.v1';
+  var OLD_FOLD_KEYS = ['personal.fold.v1'];
   var tools = document.getElementById('tools');
   var foldBtn = document.getElementById('foldBtn');
   var setFold = function (on) {
@@ -4569,7 +4603,7 @@
     lsSet(FOLD_KEY, on ? '1' : '0');
     setFold(on);
   });
-  setFold(lsGet(FOLD_KEY) === '1');
+  setFold(readCarried(FOLD_KEY, OLD_FOLD_KEYS) === '1');
 
   window.addEventListener('storage', function (e) {
     if (e.key !== STORE) return;

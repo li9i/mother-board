@@ -1,8 +1,8 @@
-# Personal board
+# Mother Board
 
 This is a board for one person in one HTML file, with the four columns Remember, Backlog, Now and Accomplished.
 
-![The board has cards in each column. A pinned card is at the top of Remember, and Remember and Backlog contain callouts. Backlog holds a board card with its band of colours, a checklist with a picture and a card with a file. Two low cards are at the bottom of Backlog. A deck in Now holds three cards below its head, and one of these cards is done. The cards show nested checklists, a code chip, a fenced block and a link.](doc/board.png)
+![The board has cards in each column. A pinned card is at the top of Remember, and Remember and Backlog contain callouts. Backlog holds a board card with its band of colours, a checklist with a picture and a card with a file. Two low cards are at the bottom of Backlog. A deck in Now holds three cards below its head, and one of these cards is done. Accomplished holds a checklist with two ticks and one cross. The cards show nested checklists, a code chip, a fenced block and a link.](doc/board.png)
 
 ## Start
 
@@ -106,7 +106,7 @@ For more information, refer to [doc/behaviour.md](doc/behaviour.md#the-head-of-t
 
 ## Where the browser keeps your board
 
-The board is in `localStorage`, in the key `personal.board.v2`. The files on its cards are in the IndexedDB database `personal.files.v1`. The two stay in this browser on this machine. With **Export** and **Import**, you can move the board and its files to a different machine.
+The board is in `localStorage`, in the key `mother.board.v1`. The files on its cards are in the IndexedDB database `mother.files.v1`. The two stay in this browser on this machine. With **Export** and **Import**, you can move the board and its files to a different machine.
 
 For more information, refer to [doc/behaviour.md](doc/behaviour.md#storage).
 
@@ -117,7 +117,7 @@ For more information, refer to [doc/behaviour.md](doc/behaviour.md#storage).
 Below the board is the short hash of the commit of this copy of the page. The hooks in `hooks/` write it. To enable the hooks, clone with this command:
 
 ```bash
-git clone -c core.hooksPath=hooks https://github.com/li9i/personal-board
+git clone -c core.hooksPath=hooks https://github.com/li9i/mother-board
 ```
 
 If you cloned without the hooks, `git config core.hooksPath hooks` enables them. The mark then shows after the next commit, merge or checkout.
@@ -138,4 +138,4 @@ For a list of the tests and their checks, refer to [doc/tests.md](doc/tests.md).
 
 ## Disclaimer
 
-`personal-board` was created by li9i and coded by Claude. What a time to be alive.
+`mother-board` was created by li9i and coded by Claude. What a time to be alive.
