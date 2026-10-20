@@ -1925,8 +1925,8 @@ test('move left and move right send a card to the top of the next column',
       return out;
     });
 
-    assert.deepStrictEqual(seen.rows, { r: [RIGHT], b: [LEFT, RIGHT],
-      h: [LEFT, RIGHT], k: [], d: [LEFT] });
+    assert.deepStrictEqual(seen.rows, { r: [RIGHT], b: [RIGHT, LEFT],
+      h: [RIGHT, LEFT], k: [], d: [LEFT] });
     assert.deepStrictEqual(seen.cols, { remember: ['L', 'r'], backlog: [],
       now: ['P', 'h', 'b', 'n'], accomplished: ['d'] });
     assert.deepStrictEqual(seen.kids, ['k']);

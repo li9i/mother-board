@@ -96,6 +96,6 @@ The list follows the sequence of the tests in the file.
 
 - `a fold is no step and ctrl z leaves the folds alone`: it changes the level of a card and then folds a deck. It makes sure that Ctrl+Z takes back the level and keeps the fold, and that Ctrl+Y does the same. It then unfolds the deck and makes sure that Ctrl+Z keeps the deck open.
 
-- `move left and move right send a card to the top of the next column`: it makes sure that a card in Remember shows only **Move right**, and that a card in Accomplished shows only **Move left**. It also makes sure that a card in Backlog and the head of a deck show both, and that a card in a deck shows neither. It then moves cards and makes sure that each card goes to the top of the next column, below the pinned cards. It also makes sure that the head of a deck takes its cards with it, and that a low card arrives normal.
+- `move left and move right send a card to the top of the next column`: it makes sure that a card in Remember shows only **Move right**, and that a card in Accomplished shows only **Move left**. It also makes sure that a card in Backlog and the head of a deck show both, with **Move right** first, and that a card in a deck shows neither. It then moves cards and makes sure that each card goes to the top of the next column, below the pinned cards. It also makes sure that the head of a deck takes its cards with it, and that a low card arrives normal.
 
 The tests examine the checksum of each file that they read from a zip. For more information, refer to [behaviour.md](behaviour.md#storage).

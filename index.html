@@ -3035,13 +3035,13 @@
       buttons.unshift({ icon: 'pin', title: card.pinned ? 'Unpin' : 'Pin to top',
         onClick: function () { togglePin(card.id); } });
       var at = KEYS.indexOf(col.key);
-      if (at < KEYS.length - 1) {
-        buttons.unshift({ icon: 'right', title: 'Move right',
-          onClick: function () { moveCard(card.id, KEYS[at + 1], 0); } });
-      }
       if (at > 0) {
         buttons.unshift({ icon: 'left', title: 'Move left',
           onClick: function () { moveCard(card.id, KEYS[at - 1], 0); } });
+      }
+      if (at < KEYS.length - 1) {
+        buttons.unshift({ icon: 'right', title: 'Move right',
+          onClick: function () { moveCard(card.id, KEYS[at + 1], 0); } });
       }
     }
     buttons.push({ cls: 'delbtn', icon: 'bin', title: 'Delete',
