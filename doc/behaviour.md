@@ -16,7 +16,7 @@ The full behaviour of the board. The README keeps the short version.
 
 **Drag** moves a card within a column or to another column. A drop on the middle of another card asks first, in a small menu. On the head of a deck, a drop puts the card in the deck and does not ask. Decks, below, has the rest. A drag that starts on the grip of an item of a list moves the item, not the card. Moving items, below, has the rest.
 
-**Move right** and **Move left**, at the top of the menu, move a card to the column on its right or on its left. The columns go from Remember to Backlog, Now and Accomplished. The card goes to the top of that column, below the pinned cards. A pinned card keeps its pin and goes above the other pinned cards. A low card arrives normal. A card in Remember has no **Move left**, and a card in Accomplished has no **Move right**. On the head of a deck, the two items move the whole deck. A card in a deck does not have them.
+**Move right** and **Move left**, at the top of the menu, move a card to the column on its right or on its left. The columns go from Remember to Backlog, Now and Accomplished. The card goes to the top of that column, below the pinned cards. A pinned card keeps its pin and goes above the other pinned cards. A low card stays low and goes to the top of the low cards. A card in Remember has no **Move left**, and a card in Accomplished has no **Move right**. On the head of a deck, the two items move the whole deck. A card in a deck does not have them.
 
 **Delete** removes a card from the board, and the bin on a note removes the note from its card. On the head of a deck, **Delete** removes the deck and every card in it. None of these asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**. **Undo** in the toast is the same as Ctrl+Z. Undo, below, has the rest.
 
@@ -112,15 +112,15 @@ A picture shows inside the text of a card or a note. The text holds a mark with 
 
 ## Levels
 
-A card in Backlog is **normal** or **low**, and only Backlog has the two. Backlog fills faster than it empties and not everything in it is next, so low is where the rest of it waits. A card is written normal, and the low ones gather at the foot of the column.
+A card is **normal** or **low**, in every column. Backlog fills faster than it empties and not everything in it is next, so low is where the rest of it waits. A card is written normal, and the low ones gather at the foot of the column.
 
 - The mark after the date says which, and a press on it turns the card over. The mark is a sun, a ring with eight spokes around it. On a normal card it is in the colour of the column. On a low one it is grey. The colour is the whole of the difference. There is no menu row for this: the mark is the whole of it.
 - A low card is drawn flat, on the colour of the column, and everything written on it fades most of the way towards the card. Words, code chips, fenced blocks, callouts, list markers, rules, tick boxes, pictures, the date and the note count all fade together, so the card recedes as one thing. The mark, the menu button and the **board** tab of a board card do not fade, because they are how you act on the card. It is put off, not gone.
 - The mark of a low card stays while the pointer is away, because that is why the card is at the foot of the column. On a normal card the mark appears when the pointer is on the card, the way **add note** does. On a screen with no pointer, every card shows its mark.
 - Making a card low sends it to the head of the low cards, and making it normal again puts it at the foot of the ones above. A card cannot be pinned and low at once, so making it low takes the pin off, and pinning it brings it up. A pinned card shows the pin and no mark.
 - A drag moves a card and never changes its level, except into or out of a deck. A card that joins a deck loses its level, and a card taken out of a low deck arrives normal. The three groups keep their order, so a card stops at the line its own group ends at, and so does the line that shows where it lands.
-- A low card dragged to another column arrives normal, because no other column has levels.
-- The count at the head of Backlog reads **5+3**: five normal cards and three low ones. The line of counts below the header reads the same way. With nothing low, one number. Every count on the board counts each card of a deck, the head included, so a head with 14 cards under it counts 15, and a low deck adds all 15 to the low number.
+- A low card stays low in another column, whether a drag or **Move left** and **Move right** takes it there.
+- The count at the head of a column reads **5+3**: five normal cards and three low ones. The line of counts below the header reads the same way. With nothing low, one number. Every count on the board counts each card of a deck, the head included, so a head with 14 cards under it counts 15, and a low deck adds all 15 to the low number.
 - The mark of a normal card takes the colour of the column, darkened as far as it must go to hold 3 to 1 against the fill of that column, and no further. Half of the colours in the book are too pale to be seen on a card as they are, and a little under half need nothing done.
 
 ## Decks
@@ -129,7 +129,7 @@ A deck is a card with cards of its own under it. The card on top is the head. It
 
 - A drop on another card can make a deck. While you drag, the board shows which of two things a drop will do. Near the top or bottom edge of a card, a line appears between the cards, and a drop moves the card to that line, as it always did. Over the middle half of a card, a ring goes round that card with the words **make a deck**. A drop there asks first. It opens a small menu below that card, with up to three buttons.
 - **Create deck** makes the deck. The card inside the ring becomes the head, and keeps its text, notes, pin and level. The dragged card goes under it.
-- **Place above this card** puts the dragged card directly above the card inside the ring, and **Place below this card** puts it directly below. Pinned cards stay at the top of the column, and low cards stay at the foot of Backlog. So the two Place buttons show only when the dragged card can land there. For example, over a pinned card, a card that is not pinned gets **Place below this card** only, and only on the last pinned card. Escape or a click outside closes the menu, and the dragged card stays where it was before the drag.
+- **Place above this card** puts the dragged card directly above the card inside the ring, and **Place below this card** puts it directly below. Pinned cards stay at the top of the column, and low cards stay at the foot of the column. So the two Place buttons show only when the dragged card can land there. For example, over a pinned card, a card that is not pinned gets **Place below this card** only, and only on the last pinned card. Escape or a click outside closes the menu, and the dragged card stays where it was before the drag.
 - Over the head of a deck, everything below its top quarter shows the ring with **add to deck**, and a drop puts the card at the top of the deck.
 - **+ add to deck**, right under the head, writes a new card at the top of the deck. It works as the box at the top of a column does, burst included.
 - Over the cards of a deck, only the line shows. A drop there puts the card into the deck at that line, and never makes a deck inside a deck. A drag also takes a card out of a deck to any place in a column. A card that joins a deck loses its pin and its level. A drag on the head moves the whole deck. A head never shows the ring, because a deck cannot go into another deck, so a head dropped on the cards of a deck lands in the column next to that deck. When the last card leaves a deck, the head is a plain card again.
@@ -138,7 +138,7 @@ A deck is a card with cards of its own under it. The card on top is the head. It
 - The arrow before the date of the head folds the deck to its head, and a second press unfolds it. The fold is on the head, so it travels with Export and shows in another tab.
 - A card in a deck is a full card, with a date, notes and a menu. Its menu holds **Attach a file**, **Download this card**, **Send this card by Gmail** and **Delete**. It takes no pin and no level.
 - **Delete** on the head deletes the deck and every card in it, in one press. The toast says how many cards went, and offers **Undo**.
-- A pin or a level on the head acts on the whole deck. A low deck in Backlog fades as one and gathers with the low cards.
+- A pin or a level on the head acts on the whole deck. A low deck fades as one and gathers with the low cards.
 - Every column takes decks.
 - A card that holds a board takes no part in a deck. Boards, below, has the rest.
 
@@ -189,7 +189,7 @@ The cards of a deck are on its head in the same way, so a deck travels whole. A 
 
 A pin is on the card too, so it travels with Export and Import as the notes do. A board saved before pins existed opens with none.
 
-The level is on the card in the same way, and travels with it. A board saved before levels existed opens with every card normal. A card that arrives both pinned and low keeps the pin, and a card that arrives low in a column with no levels arrives normal.
+The level is on the card in the same way, and travels with it. A board saved before levels existed opens with every card normal. A card that arrives both pinned and low keeps the pin.
 
 Low was called swept, when a card was put under a carpet in the footer of Backlog instead of being made low. A board saved then opens with those cards low, in the same order, at the same foot of the same column.
 

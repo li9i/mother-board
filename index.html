@@ -1454,7 +1454,7 @@
       fill: 'var(--ivory)', rule: 'var(--gray-200)', drop: 'var(--gray-500)',
       card: 'var(--ivory-50)', text: 'var(--gray-600)', head: 'var(--gray-800)' },
     { key: 'backlog', label: 'Backlog', mark: 'mise', prompt: 'What needs doing?',
-      tally: 'in backlog', low: true, palette: true },
+      tally: 'in backlog', palette: true },
     { key: 'now', label: 'Now', mark: 'pan', prompt: "What's underway?",
       tally: 'going on now', palette: true },
     { key: 'accomplished', label: 'Accomplished', mark: 'served',
@@ -1788,9 +1788,6 @@
   function orderGroups(cols) {
     KEYS.forEach(function (k) {
       var list = cols[k];
-      if (!colOf(k).low) {
-        list.forEach(function (c) { c.low = false; });
-      }
       cols[k] = list.filter(function (c) { return c.pinned; })
         .concat(list.filter(function (c) { return !c.pinned && !c.low; }))
         .concat(list.filter(function (c) { return !c.pinned && c.low; }));
@@ -3054,7 +3051,7 @@
       onMark: function () { openNotes(card.id, card.notes.length ? null : 'compose'); },
       onEdit: function (at) { openNotes(card.id, 'edit', at); },
       pinned: card.pinned,
-      low: col.low && !card.pinned && !deck ? card.low : null,
+      low: !card.pinned && !deck ? card.low : null,
       onLow: function () { toggleLow(card.id); },
       head: card.board && !deck
         ? fillCode(el('div', 'board-title'), cardTitle(card)) : null,
@@ -3126,7 +3123,7 @@
     var deck = el('section', 'deck');
     deck.dataset.id = card.id;
     if (card.pinned) deck.classList.add('pinned');
-    if (card.low && col.low) deck.classList.add('low');
+    if (card.low) deck.classList.add('low');
 
     var head = makeCard(card, col);
     head.classList.add('head');

@@ -1922,13 +1922,48 @@ test('move left and move right send a card to the top of the next column',
         now: ids(cols.now), accomplished: ids(cols.accomplished) };
       out.kids = ids(cols.now.find((c) => c.id === 'h').cards);
       out.low = cols.remember.find((c) => c.id === 'L').low;
+      out.dim = await page.run(dimOf('L'));
       return out;
     });
 
     assert.deepStrictEqual(seen.rows, { r: [RIGHT], b: [RIGHT, LEFT],
       h: [RIGHT, LEFT], k: [], d: [LEFT] });
-    assert.deepStrictEqual(seen.cols, { remember: ['L', 'r'], backlog: [],
+    assert.deepStrictEqual(seen.cols, { remember: ['r', 'L'], backlog: [],
       now: ['P', 'h', 'b', 'n'], accomplished: ['d'] });
     assert.deepStrictEqual(seen.kids, ['k']);
-    assert.strictEqual(seen.low, false);
+    assert.strictEqual(seen.low, true);
+    assert.strictEqual(seen.dim, true);
   });
+
+function dimOf(id) {
+  return 'document.querySelector(\'' + cardOf(id)
+    + '\').classList.contains("low")';
+}
+
+function dragUnder(from, col) {
+  const card = document.querySelector('.card[data-id="' + from + '"]');
+  const zone = document.querySelector('.col[data-col="' + col + '"]');
+  const box = zone.querySelector('.col-body').getBoundingClientRect();
+  const at = { bubbles: true, cancelable: true,
+    clientX: box.left + box.width / 2, clientY: box.bottom - 1,
+    dataTransfer: new DataTransfer() };
+  card.dispatchEvent(new DragEvent('dragstart', at));
+  zone.dispatchEvent(new DragEvent('dragover', at));
+  zone.dispatchEvent(new DragEvent('drop', at));
+  card.dispatchEvent(new DragEvent('dragend', at));
+}
+
+test('a low card dragged to another column stays low', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, { cols: { remember: [], accomplished: [],
+      backlog: [{ id: 'L', text: 'L', created: 1, low: true }],
+      now: [{ id: 'n', text: 'n', created: 1 }] } });
+    await page.go();
+    await page.run(call(dragUnder, 'L', 'now'));
+    const now = (await stored(page, STORE)).cols.now;
+    return { now: now.map((c) => c.id + (c.low ? ' low' : '')),
+      dim: await page.run(dimOf('L')) };
+  });
+
+  assert.deepStrictEqual(seen, { now: ['n', 'L low'], dim: true });
+});

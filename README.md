@@ -58,11 +58,11 @@ For more information, refer to [doc/behaviour.md](doc/behaviour.md#pictures).
 
 For more information, refer to [doc/behaviour.md](doc/behaviour.md#pins).
 
-## Low cards in Backlog
+## Low cards
 
-A card in Backlog has one of two levels, **normal** or **low**. The sun after the date shows the level. On a normal card, the sun shows only while the pointer is on the card. Click the sun to change the level.
+A card has one of two levels, **normal** or **low**. The sun after the date shows the level. On a normal card, the sun shows only while the pointer is on the card. Click the sun to change the level.
 
-Low cards are dim and collect at the bottom of the column. The count at the top of Backlog shows the two levels. For example, `5+3` is five normal cards and three low cards.
+Low cards are dim and collect at the bottom of the column. The count at the top of the column shows the two levels. For example, `5+3` is five normal cards and three low cards.
 
 For more information, refer to [doc/behaviour.md](doc/behaviour.md#levels).
 
