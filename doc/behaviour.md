@@ -1,6 +1,6 @@
 # Behaviour
 
-The full behaviour of the board. The README keeps the short version.
+The full behaviour of the board.
 
 ## Cards
 
