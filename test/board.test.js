@@ -1635,9 +1635,12 @@ function lowOn(id) {
   return 'document.querySelector(\'' + cardOf(id) + ' .lowbtn\').click()';
 }
 
+function menuOf(id) {
+  return 'document.querySelector(\'' + cardOf(id) + ' .menubtn\').click();';
+}
+
 function deleteOf(id) {
-  return 'document.querySelector(\'' + cardOf(id) + ' .menubtn\').click();'
-    + call(choose, 'Delete');
+  return menuOf(id) + call(choose, 'Delete');
 }
 
 const DEPTH = 100;
@@ -1888,3 +1891,44 @@ test('a fold is no step and ctrl z leaves the folds alone', async () => {
     { low: false, folded: false }
   ]);
 });
+
+const LEFT = 'Move left';
+const RIGHT = 'Move right';
+
+test('move left and move right send a card to the top of the next column',
+  async () => {
+    const card = (id, extra) => Object.assign({ id, text: id, created: 1 },
+      extra);
+    const ids = (list) => list.map((c) => c.id);
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: {
+        remember: [card('r')],
+        backlog: [card('b'), card('h', { cards: [card('k')] }),
+          card('L', { low: true })],
+        now: [card('P', { pinned: true }), card('n')],
+        accomplished: [card('d')] } });
+      await page.go();
+      const out = { rows: {} };
+      for (const id of ['r', 'b', 'h', 'k', 'd']) {
+        await page.run(menuOf(id));
+        out.rows[id] = (await page.run(call(menuRows)))
+          .filter((row) => row === LEFT || row === RIGHT);
+      }
+      for (const [id, word] of [['b', RIGHT], ['h', RIGHT], ['L', LEFT]]) {
+        await page.run(menuOf(id) + call(choose, word));
+      }
+      const cols = (await stored(page, STORE)).cols;
+      out.cols = { remember: ids(cols.remember), backlog: ids(cols.backlog),
+        now: ids(cols.now), accomplished: ids(cols.accomplished) };
+      out.kids = ids(cols.now.find((c) => c.id === 'h').cards);
+      out.low = cols.remember.find((c) => c.id === 'L').low;
+      return out;
+    });
+
+    assert.deepStrictEqual(seen.rows, { r: [RIGHT], b: [LEFT, RIGHT],
+      h: [LEFT, RIGHT], k: [], d: [LEFT] });
+    assert.deepStrictEqual(seen.cols, { remember: ['L', 'r'], backlog: [],
+      now: ['P', 'h', 'b', 'n'], accomplished: ['d'] });
+    assert.deepStrictEqual(seen.kids, ['k']);
+    assert.strictEqual(seen.low, false);
+  });

@@ -8,7 +8,7 @@ The full behaviour of the board. The README keeps the short version.
 
 **burst**, at the end of the row inside the box, decides what a saved card leaves behind. Off, the box closes once the card is in. On, it stays open and empty, ready for the next one. The switch is in the box, so it is there only while you are adding. One setting serves every box on the page, including the ones for notes and decks, and the board remembers it. It starts off.
 
-**≡** on a card opens the menu. The menu holds **Pin to top**, **Turn into a board**, **Attach a file**, **Download this card**, **Send this card by Gmail** and, last and in red, **Delete**. Escape or a click outside closes the menu. **Delete** removes the card in one press. A note carries a bin and a clip, with no menu. Files, below, has the clip.
+**≡** on a card opens the menu. The menu holds **Move left**, **Move right**, **Pin to top**, **Turn into a board**, **Attach a file**, **Download this card**, **Send this card by Gmail** and, last and in red, **Delete**. Escape or a click outside closes the menu. **Delete** removes the card in one press. A note carries a bin and a clip, with no menu. Files, below, has the clip.
 
 **A double click** on a card opens its text in a box. This is the one way to write the text, and a checkbox is the one thing that a single click changes. The same keys apply. A single click does nothing else, and a double click on a link or a button does what that link or button does. A note behaves in the same way.
 
@@ -16,11 +16,13 @@ The full behaviour of the board. The README keeps the short version.
 
 **Drag** moves a card within a column or to another column. A drop on the middle of another card asks first, in a small menu. On the head of a deck, a drop puts the card in the deck and does not ask. Decks, below, has the rest. A drag that starts on the grip of an item of a list moves the item, not the card. Moving items, below, has the rest.
 
+**Move left** and **Move right**, at the top of the menu, move a card to the column on its left or on its right. The columns go from Remember to Backlog, Now and Accomplished. The card goes to the top of that column, below the pinned cards. A pinned card keeps its pin and goes above the other pinned cards. A low card arrives normal. A card in Remember has no **Move left**, and a card in Accomplished has no **Move right**. On the head of a deck, the two items move the whole deck. A card in a deck does not have them.
+
 **Delete** removes a card from the board, and the bin on a note removes the note from its card. On the head of a deck, **Delete** removes the deck and every card in it. None of these asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**. **Undo** in the toast is the same as Ctrl+Z. Undo, below, has the rest.
 
 ## Undo
 
-**Ctrl+Z** takes back the last change to the board. **Ctrl+Y** brings back the last change that Ctrl+Z took back. Each press is one step. A step is each change that the board saves, except a fold: a new card or note, a change of text, a drag, a click on a checkbox, a pin, a level, a deck, a file, a delete, an import or a palette. Ctrl+Z and Ctrl+Y keep each deck folded or open, as it is when you press the key.
+**Ctrl+Z** takes back the last change to the board. **Ctrl+Y** brings back the last change that Ctrl+Z took back. Each press is one step. A step is each change that the board saves, except a fold: a new card or note, a change of text, a drag, a move from the menu, a click on a checkbox, a pin, a level, a deck, a file, a delete, an import or a palette. Ctrl+Z and Ctrl+Y keep each deck folded or open, as it is when you press the key.
 
 - The tab keeps the last 100 steps. Ctrl+Z goes no further back than that.
 - A new change after Ctrl+Z removes the steps that Ctrl+Y could bring back.
