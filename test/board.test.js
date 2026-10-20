@@ -1895,6 +1895,21 @@ test('a fold is no step and ctrl z leaves the folds alone', async () => {
 const LEFT = 'Move left';
 const RIGHT = 'Move right';
 
+const focused = 'document.activeElement.textContent.trim()';
+
+function moveRow() {
+  const rows = Array.from(document.querySelectorAll('[role="menu"] button'));
+  const full = rows[rows.length - 1].getBoundingClientRect().width;
+  const moves = rows
+    .filter((b) => /^Move (left|right)$/.test(b.textContent.trim()))
+    .map((b) => ({ word: b.textContent.trim(),
+      box: b.getBoundingClientRect() }))
+    .sort((a, b) => a.box.left - b.box.left);
+  return { words: moves.map((m) => m.word),
+    lines: new Set(moves.map((m) => m.box.top)).size,
+    full: moves.map((m) => m.box.width === full) };
+}
+
 test('move left and move right send a card to the top of the next column',
   async () => {
     const card = (id, extra) => Object.assign({ id, text: id, created: 1 },
@@ -1909,10 +1924,15 @@ test('move left and move right send a card to the top of the next column',
         accomplished: [card('d')] } });
       await page.go();
       const out = { rows: {} };
+      await page.run(menuOf('b'));
+      out.keys = [await page.run(focused)];
+      for (const key of ['ArrowDown', 'ArrowDown', 'ArrowUp']) {
+        await page.run(call(keyIn, '[role="menu"]', key));
+        out.keys.push(await page.run(focused));
+      }
       for (const id of ['r', 'b', 'h', 'k', 'd']) {
         await page.run(menuOf(id));
-        out.rows[id] = (await page.run(call(menuRows)))
-          .filter((row) => row === LEFT || row === RIGHT);
+        out.rows[id] = await page.run(call(moveRow));
       }
       for (const [id, word] of [['b', RIGHT], ['h', RIGHT], ['L', LEFT]]) {
         await page.run(menuOf(id) + call(choose, word));
@@ -1926,14 +1946,40 @@ test('move left and move right send a card to the top of the next column',
       return out;
     });
 
-    assert.deepStrictEqual(seen.rows, { r: [RIGHT], b: [RIGHT, LEFT],
-      h: [RIGHT, LEFT], k: [], d: [LEFT] });
+    const pair = { words: [LEFT, RIGHT], lines: 1, full: [false, false] };
+    assert.deepStrictEqual(seen.rows, {
+      r: { words: [RIGHT], lines: 1, full: [true] }, b: pair, h: pair,
+      k: { words: [], lines: 0, full: [] },
+      d: { words: [LEFT], lines: 1, full: [true] } });
+    assert.deepStrictEqual(seen.keys, [LEFT, RIGHT, 'Pin to top', RIGHT]);
     assert.deepStrictEqual(seen.cols, { remember: ['r', 'L'], backlog: [],
       now: ['P', 'h', 'b', 'n'], accomplished: ['d'] });
     assert.deepStrictEqual(seen.kids, ['k']);
     assert.strictEqual(seen.low, true);
     assert.strictEqual(seen.dim, true);
   });
+
+function oneLine() {
+  const rows = Array.from(document.querySelectorAll('[role="menu"] button'));
+  const line = rows.find((b) => b.textContent.trim() === 'Pin to top')
+    .offsetHeight;
+  return rows.filter((b) => /^Move (left|right)$/.test(b.textContent.trim()))
+    .map((b) => b.offsetHeight === line);
+}
+
+test('move left and move right keep their words on one line', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, { cols: { remember: [], now: [],
+      accomplished: [], backlog: [{ id: 'b', text: 'b', created: 1 }] } });
+    await page.go();
+    await page.run('document.head.appendChild(document.createElement('
+      + '"style")).textContent = "[role=menu] button { font-size: 16px }";'
+      + menuOf('b'));
+    return page.run(call(oneLine));
+  });
+
+  assert.deepStrictEqual(seen, [true, true]);
+});
 
 function dimOf(id) {
   return 'document.querySelector(\'' + cardOf(id)

@@ -96,7 +96,9 @@ The list follows the sequence of the tests in the file.
 
 - `a fold is no step and ctrl z leaves the folds alone`: it changes the level of a card and then folds a deck. It makes sure that Ctrl+Z takes back the level and keeps the fold, and that Ctrl+Y does the same. It then unfolds the deck and makes sure that Ctrl+Z keeps the deck open.
 
-- `move left and move right send a card to the top of the next column`: it makes sure that a card in Remember shows only **Move right**, and that a card in Accomplished shows only **Move left**. It also makes sure that a card in Backlog and the head of a deck show both, with **Move right** first, and that a card in a deck shows neither. It then moves cards and makes sure that each card goes to the top of the next column, below the pinned cards. It also makes sure that the head of a deck takes its cards with it, and that a low card stays low, at the top of the low cards.
+- `move left and move right send a card to the top of the next column`: it makes sure that a card in Remember shows only **Move right**, and that a card in Accomplished shows only **Move left**. It also makes sure that a card in Backlog and the head of a deck show both on one row, with **Move left** on the left. It makes sure that a single item fills its row, and that a card in a deck shows neither. It also makes sure that the arrow keys go through **Move left**, **Move right** and **Pin to top** in that sequence. It then moves cards and makes sure that each card goes to the top of the next column, below the pinned cards. It also makes sure that the head of a deck takes its cards with it, and that a low card stays low, at the top of the low cards.
+
+- `move left and move right keep their words on one line`: it makes the words of the menu bigger, as a wider font does. It makes sure that **Move left** and **Move right** are as high as **Pin to top**, so that no word goes to a second line.
 
 - `a low card dragged to another column stays low`: it drags a low card from Backlog to Now. It makes sure that the card is low in Now, and that it shows dim.
 

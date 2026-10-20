@@ -1166,6 +1166,15 @@
     text-align: left;
     cursor: pointer;
   }
+  .card-menu .pair {
+    display: flex;
+    gap: 1px;
+  }
+  .card-menu .pair button {
+    flex: 1;
+    white-space: nowrap;
+  }
+  .card-menu .pair button:last-child { flex-direction: row-reverse; }
   .card-menu button:hover { background: var(--gray-50); }
   .card-menu .delbtn { color: var(--red); }
   .card-menu button:focus-visible { outline: 2px solid var(--clay); outline-offset: -2px; }
@@ -2423,19 +2432,29 @@
     return button;
   }
 
+  function menuRow(a) {
+    var row = textBtn(a.cls);
+    row.setAttribute('role', 'menuitem');
+    row.appendChild(icon(a.icon));
+    row.appendChild(document.createTextNode(a.title));
+    row.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeMenu();
+      a.onClick();
+    });
+    return row;
+  }
+
   function openMenu(card, button, actions) {
     menu.innerHTML = '';
     actions.forEach(function (a) {
-      var row = textBtn(a.cls);
-      row.setAttribute('role', 'menuitem');
-      row.appendChild(icon(a.icon));
-      row.appendChild(document.createTextNode(a.title));
-      row.addEventListener('click', function (e) {
-        e.stopPropagation();
-        closeMenu();
-        a.onClick();
-      });
-      menu.appendChild(row);
+      if (a.pair) {
+        var pair = el('div', 'pair');
+        a.pair.forEach(function (b) { pair.appendChild(menuRow(b)); });
+        menu.appendChild(pair);
+      } else {
+        menu.appendChild(menuRow(a));
+      }
       if (a.cap) menu.appendChild(el('div', 'cap', a.cap));
     });
     menuOwner = button;
@@ -2443,7 +2462,7 @@
     if (card) card.classList.add('menuopen');
     menu.classList.add('on');
     placeMenu(button);
-    menu.firstChild.focus();
+    menu.querySelector('button').focus();
   }
 
   function closeMenu() {
@@ -2469,7 +2488,7 @@
   menu.addEventListener('keydown', function (e) {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
     e.preventDefault();
-    var rows = [].slice.call(menu.children);
+    var rows = [].slice.call(menu.querySelectorAll('button'));
     var at = rows.indexOf(document.activeElement);
     rows[(at + (e.key === 'ArrowDown' ? 1 : rows.length - 1)) % rows.length].focus();
   });
@@ -3032,14 +3051,16 @@
       buttons.unshift({ icon: 'pin', title: card.pinned ? 'Unpin' : 'Pin to top',
         onClick: function () { togglePin(card.id); } });
       var at = KEYS.indexOf(col.key);
+      var moves = [];
       if (at > 0) {
-        buttons.unshift({ icon: 'left', title: 'Move left',
+        moves.push({ icon: 'left', title: 'Move left',
           onClick: function () { moveCard(card.id, KEYS[at - 1], 0); } });
       }
       if (at < KEYS.length - 1) {
-        buttons.unshift({ icon: 'right', title: 'Move right',
+        moves.push({ icon: 'right', title: 'Move right',
           onClick: function () { moveCard(card.id, KEYS[at + 1], 0); } });
       }
+      buttons.unshift(moves.length > 1 ? { pair: moves } : moves[0]);
     }
     buttons.push({ cls: 'delbtn', icon: 'bin', title: 'Delete',
       onClick: function () { removeCard(card.id); } });
