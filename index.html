@@ -1121,6 +1121,19 @@
   .card:hover .notemark.add,
   .card:focus-within .notemark.add { opacity: var(--fade, 1); }
   @media (hover: none) { .notemark.add { opacity: var(--fade, 1); } }
+  .card:has(> .earmark) { position: relative; }
+  .earmark {
+    position: absolute;
+    top: -0.75px;
+    right: -0.75px;
+    width: 16.75px;
+    height: 16.75px;
+    background: var(--ink, var(--gray-500));
+    border-top-right-radius: 7.25px;
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+    opacity: var(--fade, 1);
+    pointer-events: none;
+  }
   .card-actions {
     margin-left: auto;
     display: flex;
@@ -3153,6 +3166,9 @@
       item.insertBefore(makeBoardTab(card), item.firstChild);
       item.insertBefore(
         el('div', 'board-done', boardDone(card.board)), item.lastChild);
+    }
+    if (card.notes.length) {
+      item.insertBefore(el('span', 'earmark'), item.firstChild);
     }
     return item;
   }

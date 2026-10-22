@@ -2018,6 +2018,45 @@ test('a click on the mark of a column folds the column to its head',
       false, false, false, false, false, true, true, false, true]);
   });
 
+function earmarkOf(id) {
+  const card = document.querySelector('.card[data-id="' + id + '"]');
+  const mark = card.querySelector('.earmark');
+  const box = card.getBoundingClientRect();
+  const edge = getComputedStyle(card);
+  const tip = mark && mark.getBoundingClientRect();
+  return mark && { shown: mark.checkVisibility(),
+    tucked: tip.top < box.top + parseFloat(edge.borderTopWidth)
+      && tip.right > box.right - parseFloat(edge.borderRightWidth),
+    colour: getComputedStyle(mark).backgroundColor,
+    sun: getComputedStyle(card.querySelector('.lowdot')).color,
+    opacity: getComputedStyle(mark).opacity,
+    count: getComputedStyle(card.querySelector('.notemark')).opacity };
+}
+
+test('a card with notes shows an earmark that fades with its note count',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, oneNote([
+        { id: 'b', text: 'card b', created: 1 },
+        { id: 'c', text: 'card c', created: 1, low: true,
+          notes: [{ id: 'm', text: 'note m', created: 1 }] }]));
+      await page.go();
+      const out = {};
+      for (const id of ['a', 'b', 'c']) {
+        out[id] = await page.run(call(earmarkOf, id));
+      }
+      return out;
+    });
+
+    assert.strictEqual(seen.a.shown, true);
+    assert.strictEqual(seen.a.tucked, true);
+    assert.strictEqual(seen.a.colour, seen.a.sun);
+    assert.strictEqual(seen.b, null);
+    assert.strictEqual(seen.c.shown, true);
+    assert.strictEqual(seen.c.opacity, seen.c.count);
+    assert.ok(Number(seen.c.opacity) < 1);
+  });
+
 const LEFT = 'Move left';
 const RIGHT = 'Move right';
 
