@@ -22,7 +22,7 @@ The full behaviour of the board.
 
 ## Undo
 
-**Ctrl+Z** takes back the last change to the board. **Ctrl+Y** brings back the last change that Ctrl+Z took back. Each press is one step. A step is each change that the board saves, except a fold: a new card or note, a change of text, a drag, a move from the menu, a click on a checkbox, a pin, a level, a deck, a file, a delete, an import or a palette. Ctrl+Z and Ctrl+Y keep each deck folded or open, as it is when you press the key.
+**Ctrl+Z** takes back the last change to the board. **Ctrl+Y** brings back the last change that Ctrl+Z took back. Each press is one step. A step is each change that the board saves, except a fold: a new card or note, a change of text, a drag, a move from the menu, a click on a checkbox, a pin, a level, a deck, a file, a delete, an import or a palette. Ctrl+Z and Ctrl+Y keep each deck and each column folded or open, as it is when you press the key.
 
 - The tab keeps the last 100 steps. Ctrl+Z goes no further back than that.
 - A new change after Ctrl+Z removes the steps that Ctrl+Y could bring back.
@@ -191,6 +191,8 @@ A pin is on the card too, so it travels with Export and Import as the notes do. 
 
 The level is on the card in the same way, and travels with it. A board saved before levels existed opens with every card normal. A card that arrives both pinned and low keeps the pin.
 
+The folded columns are on their board, in the list `folded`, so they travel with Export as the palette does. A board saved before column folds existed opens with every column open.
+
 Low was called swept, when a card was put under a carpet in the footer of Backlog instead of being made low. A board saved then opens with those cards low, in the same order, at the same foot of the same column.
 
 The page keeps every part of a board that it does not know, and saves that part back as it found it. This covers an unknown field on a card, a note, a card in a deck or a board, and a whole unknown column. The page also keeps cards that hang under a card in a deck. It keeps a board under a note or under a card in a deck too. It does not show the cards under a card in a deck, or a board under a note or under a card in a deck. So a copy of the page never drops what a newer copy wrote.
@@ -218,6 +220,14 @@ The colour combinations come from Sanzo Wada's *A Dictionary of Color Combinatio
 Green is the colour of Accomplished, so a combination is here only if one of its colours is a green. That green goes to Accomplished and stays there. Where a combination holds more than one green, the deepest of them goes there.
 
 The book holds 108 combinations of four colours. 24 of them are here, in eight families. The rest are not, either because they hold no green, or because no three of their colours stay apart at the strength the columns use, so two columns would read as one.
+
+## Folding a column
+
+**The mark** to the left of the name of a column folds the column to its head. The head keeps the mark, the name and the count. The add button, the cards and **clear column** go out of view, and the column becomes only as high as its head. A second click on the mark opens the column again.
+
+- Each board keeps its own folds. If you fold Backlog on the Mother Board, Backlog stays open on the boards inside it.
+- The fold is on the board, so it stays after a reload, travels with Export and shows in another tab.
+- A fold is not a step. Ctrl+Z does not take it back, and Ctrl+Z on a different change keeps the column folded or open.
 
 ## The Remember column
 

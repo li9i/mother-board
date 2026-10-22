@@ -1969,6 +1969,55 @@ test('a fold is no step and ctrl z leaves the folds alone', async () => {
   ]);
 });
 
+function foldOf(col) {
+  return 'document.querySelector(\'.col[data-col="' + col
+    + '"] .col-head button\').click()';
+}
+
+function partsShown(col) {
+  return Array.from(document.querySelector('.col[data-col="' + col + '"]')
+    .children).filter((n) => n.checkVisibility()).map((n) => n.className);
+}
+
+test('a click on the mark of a column folds the column to its head',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [{ id: 'd', text: 'card d', created: 1 }],
+        backlog: [
+          { id: 'a', text: 'card a', created: 1 },
+          { id: 'b', text: 'board b', created: 1, board: { cols: {
+            accomplished: [{ id: 'i', text: 'inside', created: 1 }] } } }
+        ] } });
+      await page.go();
+      const fold = () => page.run(foldOf('accomplished'));
+      const into = (hash, id) => async () => {
+        await page.run('location.hash = "' + hash + '"');
+        await until(() => page.run('!!document.querySelector(\''
+          + cardOf(id) + '\')'));
+      };
+      const out = [];
+      for (const step of [fold, page.go, into('b', 'i'), fold,
+        into('', 'a'), fold, into('b', 'i'), into('', 'a'),
+        () => page.run(lowOn('a')), fold,
+        () => page.run(call(ctrlIn, 'body', 'z')),
+        () => page.run(call(ctrlIn, 'body', 'y'))]) {
+        await step();
+        out.push({ shown: await page.run(call(partsShown, 'accomplished')),
+          low: !!(await stored(page, STORE)).cols.backlog
+            .find((c) => c.id === 'a').low });
+      }
+      return out;
+    });
+
+    const head = ['col-head'];
+    const all = ['col-head', 'col-add', 'col-body', 'col-foot'];
+    assert.deepStrictEqual(seen.map((s) => s.shown),
+      [head, head, all, head, head, all, head, all, all, head, head, head]);
+    assert.deepStrictEqual(seen.map((s) => s.low), [false, false, false,
+      false, false, false, false, false, true, true, false, true]);
+  });
+
 const LEFT = 'Move left';
 const RIGHT = 'Move right';
 

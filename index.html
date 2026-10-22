@@ -207,7 +207,8 @@
   }
   body.folded .fold { transform: rotate(90deg); }
   .fold:hover { color: var(--clay-d); }
-  .fold:focus-visible {
+  .fold:focus-visible,
+  .colfold:focus-visible {
     outline: 2px solid var(--clay);
     outline-offset: 2px;
     border-radius: 2px;
@@ -396,6 +397,21 @@
     color: var(--head, var(--slate));
   }
   .col-head .glyph svg { width: 16px; height: 16px; }
+  .colfold {
+    display: flex;
+    flex: none;
+    align-self: center;
+    margin: -2px;
+    padding: 2px;
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .colfold:hover { background: rgba(20, 20, 19, 0.08); }
+  .col.folded { min-height: 0; }
+  .col.folded > :not(.col-head) { display: none; }
+  .col.folded .col-head { border-bottom: 0; }
   .col-head h2 {
     font-family: var(--serif);
     font-weight: 500;
@@ -1902,10 +1918,12 @@
   function keepFolds(board) {
     var now = {};
     cardsOf(state).forEach(function (c) { now[c.id] = c; });
+    board.folded = state.folded;
     cardsOf(board).forEach(function (c) {
       var was = now[c.id];
       if (!was) return;
       FOLDS.forEach(function (key) { c[key] = was[key]; });
+      if (c.board && was.board) c.board.folded = was.board.folded;
     });
     return board;
   }
@@ -1945,6 +1963,10 @@
 
   function here() {
     return steps(path).pop().board;
+  }
+
+  function isFolded(key) {
+    return (here().folded || []).indexOf(key) >= 0;
   }
 
   function readPath() {
@@ -2121,7 +2143,18 @@
     column.dataset.col = c.key;
 
     var head = el('div', 'col-head');
-    head.appendChild(icon(c.mark));
+    var fold = textBtn('colfold');
+    fold.appendChild(icon(c.mark));
+    fold.addEventListener('click', function () {
+      var board = here();
+      var was = board.folded || [];
+      board.folded = isFolded(c.key)
+        ? was.filter(function (k) { return k !== c.key; })
+        : was.concat(c.key);
+      keepBoard(JSON.stringify(state));
+      render();
+    });
+    head.appendChild(fold);
     head.appendChild(el('h2', null, c.label));
     var count = el('span', 'count');
     head.appendChild(count);
@@ -2183,7 +2216,8 @@
       }
     });
 
-    views[c.key] = { el: column, body: body, count: count, clear: clear };
+    views[c.key] = { el: column, body: body, count: count, clear: clear,
+      fold: fold };
   });
 
   function wireDrag(card, id, level) {
@@ -3812,6 +3846,11 @@
         return card.cards.length ? makeDeck(card, c) : makeCard(card, c);
       });
       view.count.textContent = countOf(list);
+      var folded = isFolded(c.key);
+      view.el.classList.toggle('folded', folded);
+      view.fold.setAttribute('aria-expanded', folded ? 'false' : 'true');
+      view.fold.setAttribute('aria-label',
+        (folded ? 'Unfold ' : 'Fold ') + c.label);
       if (view.clear) {
         view.clear.closeAsk();
         view.clear.classList.toggle('off', !list.length);
