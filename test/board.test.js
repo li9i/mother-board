@@ -2050,11 +2050,31 @@ test('a card with notes shows an earmark that fades with its note count',
 
     assert.strictEqual(seen.a.shown, true);
     assert.strictEqual(seen.a.tucked, true);
-    assert.strictEqual(seen.a.colour, seen.a.sun);
     assert.strictEqual(seen.b, null);
     assert.strictEqual(seen.c.shown, true);
     assert.strictEqual(seen.c.opacity, seen.c.count);
     assert.ok(Number(seen.c.opacity) < 1);
+  });
+
+test('the sun is one colour in every column and the earmark is not',
+  async () => {
+    const noted = (id) => ({ id, text: 'card ' + id, created: 1,
+      notes: [{ id: id + 'n', text: 'note', created: 1 }] });
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [noted('r')],
+        backlog: [noted('a')], now: [noted('w')], accomplished: [] } });
+      await page.go();
+      const out = {};
+      for (const id of ['r', 'a', 'w']) {
+        out[id] = await page.run(call(earmarkOf, id));
+      }
+      return out;
+    });
+
+    assert.strictEqual(seen.a.sun, seen.r.sun);
+    assert.strictEqual(seen.w.sun, seen.r.sun);
+    assert.notStrictEqual(seen.a.colour, seen.w.colour);
+    assert.notStrictEqual(seen.a.colour, seen.a.sun);
   });
 
 const LEFT = 'Move left';

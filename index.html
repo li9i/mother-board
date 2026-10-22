@@ -1082,7 +1082,7 @@
     display: flex;
     width: 16px;
     height: 16px;
-    color: var(--ink, var(--gray-500));
+    color: var(--gray-500);
     transition: opacity 120ms ease;
   }
   .lowdot svg {
@@ -1091,7 +1091,6 @@
     stroke-width: 1.8;
     stroke-linecap: butt;
   }
-  .card.low .lowdot { color: var(--gray-500); }
   .card:not(.low) .lowdot { opacity: 0; }
   .card:hover .lowdot,
   .card:focus-within .lowdot { opacity: 1; }
