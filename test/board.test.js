@@ -2536,3 +2536,55 @@ test('words in quotes match only when they stand side by side', async () => {
   assert.deepStrictEqual(seen, { words: ['n', 'r'], phrase: ['n'],
     bold: ['Mill Road'], open: ['n', 'r'], date: ['q'] });
 });
+
+function activeShown() {
+  return document.querySelector('#findList .hit.on').dataset.hit;
+}
+
+test('search lists each board newest first and folds a board by its head',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [],
+        backlog: [
+          { id: 'o', text: 'old plum', created: 1000 },
+          { id: 'n', text: 'new plum', created: 3000, notes: [
+            { id: 'm', text: 'middle plum', created: 2000 }] },
+          { id: 'g', text: 'Garden', created: 1, board: { cols: { backlog: [
+            { id: 'g1', text: 'first plum', created: 1000 },
+            { id: 'g2', text: 'second plum', created: 5000 }] } } }] } });
+      await page.go();
+      const shown = {};
+      await page.run(call(keyIn, 'body', '/'));
+      shown.sorted = await page.run(call(searchFor, 'plum'));
+      await page.run('document.querySelectorAll("#findList .hit-group")[1]'
+        + '.click()');
+      shown.folded = { hits: await page.run('Array.from(document'
+        + '.querySelectorAll("#findList .hit")).map((h) => h.dataset.hit)'),
+      groups: await page.run(call(groupsShown)) };
+      await page.run(call(keyIn, '#findInput', 'ArrowUp'));
+      shown.wrapped = await page.run(call(activeShown));
+      shown.kept = await page.run(call(searchFor, 'plum'));
+      await page.run('document.querySelectorAll("#findList .hit-group")[1]'
+        + '.click()');
+      shown.unfolded = await page.run('Array.from(document'
+        + '.querySelectorAll("#findList .hit")).map((h) => h.dataset.hit)');
+      await page.run(call(keyIn, '#findInput', 'Escape'));
+      await page.run('location.hash = "g"');
+      await until(() => page.run('!!document.querySelector(\''
+        + cardOf('g1') + '\')'));
+      await page.run(call(keyIn, 'body', '/'));
+      shown.inside = await page.run(call(searchFor, 'plum'));
+      return shown;
+    });
+
+    assert.deepStrictEqual(seen, {
+      sorted: ['n', 'm', 'o', 'g2', 'g1'],
+      folded: { hits: ['n', 'm', 'o'],
+        groups: ['Mother Board', 'Mother Board / Garden'] },
+      wrapped: 'o',
+      kept: ['n', 'm', 'o'],
+      unfolded: ['n', 'm', 'o', 'g2', 'g1'],
+      inside: ['g2', 'g1', 'n', 'm', 'o']
+    });
+  });

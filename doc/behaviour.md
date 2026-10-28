@@ -168,9 +168,9 @@ A card can hold a board of its own. Such a card is a board card. The top board i
 - A date matches only when you type it in full, as the card shows it, such as `Oct 6`. It can also be in quotes. Then search finds the cards and notes that you wrote on that day. A part of a date, such as `oct` or `6`, does not find a card by its date.
 - Each word that you type must be in the result, in any order. Case does not matter.
 - Words in double quotes, such as `"mill road"`, must stand side by side, in that order. A quote that you have not closed yet counts as separate words, so the list does not go empty while you type.
-- The list puts the board you are in first and the other boards after it. Each board has its trail as a head, such as `Mother Board / Garden`. Each row shows the words around the match, with the match in bold. Below them, the row tells what the result is: `card`, `in deck`, `note`, `file` or `board`. It also gives the column and, for a note or a file, its card. A match in the address of a link shows that address in the row.
+- The list puts the board you are in first and the other boards after it. Each board has its trail as a head, such as `Mother Board / Garden`. Inside each board, the newest result comes first. A note has its own date, and a file has the date of its card. A click on the head of a board folds its results away, and a second click shows them again. The fold lasts until you reload the page. Each row shows the words around the match, with the match in bold. Below them, the row tells what the result is: `card`, `in deck`, `note`, `file` or `board`. It also gives the column and, for a note or a file, its card. A match in the address of a link shows that address in the row.
 - **this board** keeps only the results on the board you are in. **every board** is the default.
-- The up and down arrow keys move through the list. Enter or a click opens the result.
+- The up and down arrow keys move through the results that show. Enter or a click opens the result.
 - When the box is empty, the window lists your last five searches, newest first. A search goes on the list when you open one of its results. A click on a search in the list runs it again.
 
 **Opening a result** takes you to its card:

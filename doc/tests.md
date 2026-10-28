@@ -130,4 +130,6 @@ The list follows the sequence of the tests in the file.
 
 - `words in quotes match only when they stand side by side`: it makes sure that two words without quotes find the two cards that hold them. The same words in quotes find only the card where they stand side by side, and the row shows them in bold as one. It also makes sure that a quote that is not closed counts as separate words, and that a date in quotes finds its card.
 
+- `search lists each board newest first and folds a board by its head`: it makes sure that the results of each board show newest first, and that a note counts by its own date. It makes sure that a click on the head of a board hides the results of that board, and that the arrow keys skip them. It also makes sure that the fold stays for a new search, and that a second click shows the results again. Last, it makes sure that the board you are in comes first.
+
 The tests examine the checksum of each file that they read from a zip. For more information, refer to [behaviour.md](behaviour.md#storage).
