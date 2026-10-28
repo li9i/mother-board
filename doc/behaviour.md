@@ -170,6 +170,7 @@ A card can hold a board of its own. Such a card is a board card. The top board i
 - The list puts the board you are in first and the other boards after it. Each board has its trail as a head, such as `Mother Board / Garden`. Each row shows the words around the match, with the match in bold. Below them, the row tells what the result is: `card`, `in deck`, `note`, `file` or `board`. It also gives the column and, for a note or a file, its card. A match in the address of a link shows that address in the row.
 - **this board** keeps only the results on the board you are in. **every board** is the default.
 - The up and down arrow keys move through the list. Enter or a click opens the result.
+- When the box is empty, the window lists your last five searches, newest first. A search goes on the list when you open one of its results. A click on a search in the list runs it again.
 
 **Opening a result** takes you to its card:
 
@@ -195,6 +196,8 @@ Export and Import use two shapes. A whole board is `{"cols": ...}` and replaces 
 ## Storage
 
 The board is in `localStorage`, in the key `mother.board.v1`. The Mother Board holds everything, and each board inside it is on its card. The key belongs to one browser on one machine. Export moves a board to another machine. Two tabs on the same board stay in sync.
+
+The recent searches are in `localStorage` too, in the key `mother.search.v1`. They belong to the browser and not to a board, so Export does not carry them.
 
 The palette of each board is on that board. A Mother Board saved before boards kept a palette of their own takes its palette from the old keys `personal.palette.v1` and `personal.palturn.v1`. The page no longer writes those keys.
 

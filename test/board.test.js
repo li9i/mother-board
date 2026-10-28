@@ -2469,3 +2469,43 @@ test('a note result opens the notes window and a file result rings its chip',
       file: { rings: ['c'], chips: 1, frames: 1 }
     });
   });
+
+function pastShown() {
+  return Array.from(document.querySelectorAll('#findList .past'))
+    .map((n) => n.textContent);
+}
+
+test('the empty search box lists the last five searches that opened a result',
+  async () => {
+    const words = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'];
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [], backlog: words.map((w) => ({ id: w, text: w,
+          created: 1 })) } });
+      await page.go();
+      const open = async (w) => {
+        await page.run(call(keyIn, 'body', '/'));
+        await page.run(call(searchFor, w));
+        await page.run(call(keyIn, '#findInput', 'Enter'));
+      };
+      for (const w of words.concat('alpha')) await open(w);
+      await page.run(call(keyIn, 'body', '/'));
+      await page.run(call(searchFor, 'golf'));
+      await page.run(call(searchFor, ''));
+      const shown = { kept: await page.run(call(pastShown)) };
+      await page.go();
+      await page.run(call(keyIn, 'body', '/'));
+      await page.run(call(searchFor, ''));
+      shown.reloaded = await page.run(call(pastShown));
+      await page.run('document.querySelector("#findList .past").click()');
+      shown.again = { words: await page.run('document.querySelector('
+        + '"#findInput").value'), hits: await page.run('Array.from('
+        + 'document.querySelectorAll("#findList .hit")).map((h) =>'
+        + ' h.dataset.hit)') };
+      return shown;
+    });
+
+    const kept = ['alpha', 'foxtrot', 'echo', 'delta', 'charlie'];
+    assert.deepStrictEqual(seen, { kept, reloaded: kept,
+      again: { words: 'alpha', hits: ['alpha'] } });
+  });

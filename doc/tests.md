@@ -126,4 +126,6 @@ The list follows the sequence of the tests in the file.
 
 - `a note result opens the notes window and a file result rings its chip`: it makes sure that a note result opens the notes window of its card, with a ring and an outline on the note. It also makes sure that a file result puts a ring on the chip of the file.
 
+- `the empty search box lists the last five searches that opened a result`: it opens a result for six different words, and then for the first word again. It makes sure that the empty box lists the last five of these words, newest first, with no word twice. It makes sure that a word that opened no result is not on the list, and that the list stays after a reload. Last, it makes sure that a click on a word in the list runs that search again.
+
 The tests examine the checksum of each file that they read from a zip. For more information, refer to [behaviour.md](behaviour.md#storage).
