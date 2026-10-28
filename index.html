@@ -27,7 +27,7 @@
     --serif: ui-serif, Georgia, "Times New Roman", serif;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    --frame-gap: 16px;
+    --frame-gap: 36px;
     --found-time: 2.6s;
   }
   * { box-sizing: border-box; }
@@ -1549,7 +1549,7 @@
     position: absolute;
     inset: calc(-1 * var(--frame-gap));
     border: 2px solid var(--ink, var(--gray-500));
-    border-radius: calc(8px + var(--frame-gap));
+    border-radius: 16px;
   }
   #notesBody { --frame-gap: 9px; }
   @keyframes found-fade {
