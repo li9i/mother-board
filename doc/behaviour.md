@@ -153,12 +153,30 @@ A card can hold a board of its own. Such a card is a board card. The top board i
 - Under the name, a line such as `3 of 9 done` gives the count of Accomplished against the count of Backlog, Now and Accomplished together. Remember is not in the count, because its cards are not tasks. A board with no cards shows `empty board`.
 - On a low card, the band, the name and the line fade with the rest of the card. The tab does not fade.
 - The tab steps into the board. The heading becomes a trail, such as `Mother Board / Work / Robot arm`. Each name before the last is a button that steps back out to that board. The Back and Forward buttons of the browser step out and in too. The address keeps the place after `#`, so a reload or a bookmark opens the same board. The browser tab shows the name of the board you are in.
-- Inside a board, everything acts on that board. This covers new cards, drags, pins, levels, decks and notes. It also covers the counts at the head of each column and the line of counts below the header. So do **clear column**, the toast and **Undo**, **Export** and **Import**.
+- Inside a board, everything acts on that board. This covers new cards, drags, pins, levels, decks and notes. It also covers the counts at the head of each column and the line of counts below the header. So do **clear column**, the toast and **Undo**, **Export** and **Import**. Search is different: it looks in every board, unless you select **this board**.
 - A board card counts as one card in the counts of the board that holds it. The cards inside its board count only inside that board.
 - A board card takes no part in a deck. It cannot join a deck and it cannot head one. When you drag a board card over a card, or a card over a board card, no ring shows. The line shows, and a drop moves the card to that line. A board card dropped on the cards of a deck lands in the column next to that deck, as a head does.
 - A drop never puts a card into another board. To move a card to another board, use **Download this card**, open the other board and **Import** the file there.
 - **Delete** on a board card deletes the card and its whole board in one press. It does not ask first. The toast says how many cards went, such as `Board of 12 cards deleted`, and offers **Undo**. The number is the count of that board, with each board inside it counted as one card.
 - **Undo** puts the card back in the board it came from, even if you stepped into another board before you pressed it. It also opens that board. This holds for every delete: **Undo** returns a card, a note, a deck or a cleared column to the board it came from.
+
+## Search
+
+**search**, on the line of counts, opens a window where you type what you look for. The **/** key opens it too, and so does Ctrl+K. The line of counts stays in view when you scroll, so search is always near. Escape or a click outside closes the window.
+
+- Search looks in every board at once. It looks in the text of each card and note, as the card shows it. It also looks in the names of files and boards, and in the address behind a link that shows only its words. The marks in the text, such as `**` or `- [ ]`, are not part of the search.
+- A date matches only when you type it in full, as the card shows it, such as `Oct 6`. Then search finds the cards and notes that you wrote on that day. A part of a date, such as `oct` or `6`, does not find a card by its date.
+- Each word that you type must be in the result, in any order. Case does not matter.
+- The list puts the board you are in first and the other boards after it. Each board has its trail as a head, such as `Mother Board / Garden`. Each row shows the words around the match, with the match in bold. Below them, the row tells what the result is: `card`, `in deck`, `note`, `file` or `board`. It also gives the column and, for a note or a file, its card. A match in the address of a link shows that address in the row.
+- **this board** keeps only the results on the board you are in. **every board** is the default.
+- The up and down arrow keys move through the list. Enter or a click opens the result.
+
+**Opening a result** takes you to its card:
+
+- If the card is on a different board, search steps into that board. A folded column, a folded deck or folded done cards open to show the card, and they stay open. A fold is not a step, so Ctrl+Z does not fold them again.
+- The page scrolls the card to the middle of the screen and puts a ring in the colour of its column around it. A second, larger outline shows around the ring for about two seconds and then fades. The ring stays until your next click.
+- A note opens the notes window of its card, with a ring and an outline around the note. A file also gets a ring around its chip.
+- When search steps into a board or opens a fold, the toast tells what it did, such as `Stepped into Garden, opened Backlog`. If search stepped into a different board, the toast offers **Back**, which returns to the board you were on.
 
 ## Export and Import
 
@@ -227,6 +245,7 @@ The book holds 108 combinations of four colours. 24 of them are here, in eight f
 - Each board keeps its own folds. If you fold Backlog on the Mother Board, Backlog stays open on the boards inside it.
 - The fold is on the board, so it stays after a reload, travels with Export and shows in another tab.
 - A fold is not a step. Ctrl+Z does not take it back, and Ctrl+Z on a different change keeps the column folded or open.
+- Search opens a folded column when it takes you to a card in it. The column stays open. Search, above, has the rest.
 
 ## The Remember column
 
@@ -234,7 +253,7 @@ The book holds 108 combinations of four colours. 24 of them are here, in eight f
 
 ## The head of the page
 
-The small arrow on the left side of the line of counts hides the head of the page. The line of counts is the line below the header, for example `5 to remember · 4+3 in backlog · 6 going on now · 5 accomplished`. The arrow hides the small label `mother / board`, the heading, the hint line, **Palette**, and the **Import** and **Export** buttons. **tips** does not hide. It moves onto the line of counts.
+The small arrow on the left side of the line of counts hides the head of the page. The line of counts is the line below the header, for example `5 to remember · 4+3 in backlog · 6 going on now · 5 accomplished`. The arrow hides the small label `mother / board`, the heading, the hint line, **Palette**, and the **Import** and **Export** buttons. **tips** does not hide. It moves onto the line of counts. **search** does not hide, because it is on the line of counts.
 
 The arrow points up while the head shows, and down while the head is hidden. When you click it again, the head of the page shows again. The page records your selection in `localStorage`, in the key `mother.fold.v1`.
 

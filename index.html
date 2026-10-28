@@ -27,6 +27,7 @@
     --serif: ui-serif, Georgia, "Times New Roman", serif;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --frame-gap: 12px;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -346,6 +347,7 @@
   .pal-back .arrow { color: var(--clay); font-size: 13px; }
 
   .board {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr 1px repeat(3, 1fr);
     gap: 16px;
@@ -1404,6 +1406,176 @@
     border-radius: 2px;
   }
 
+  .seek {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 1 200px;
+    min-width: 90px;
+    background: transparent;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-500);
+    padding: 4px 6px 4px 14px;
+    text-align: left;
+    cursor: text;
+  }
+  .seek:hover { border-color: var(--gray-500); }
+  .seek .glyph,
+  .finder-in .glyph { display: flex; color: var(--gray-600); }
+  .seek svg { width: 13px; height: 13px; }
+  .finder-in svg { width: 18px; height: 18px; }
+  .seek:focus-visible {
+    outline: none;
+    border-color: var(--clay);
+    color: var(--clay-d);
+  }
+  .seek kbd,
+  .finder kbd {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1;
+    color: var(--gray-600);
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    padding: 3px 5px 2px;
+  }
+  .finder {
+    width: 640px;
+    max-width: 100%;
+    max-height: 80vh;
+    margin: 8vh auto auto;
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: 12px;
+    box-shadow: 0 16px 44px rgba(20, 20, 19, 0.22);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .finder-in {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 12px 14px;
+    border-bottom: 1.5px solid var(--col-rule);
+  }
+  #findInput {
+    flex: 1 1 160px;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-family: var(--sans);
+    font-size: 16px;
+    color: var(--slate);
+  }
+  #findInput::placeholder { color: var(--gray-500); }
+  #findInput::-webkit-search-cancel-button { display: none; }
+  .scope { display: flex; flex: none; gap: 12px; }
+  .scope button {
+    background: none;
+    border: 0;
+    padding: 0;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--gray-500);
+    cursor: pointer;
+  }
+  .scope button[aria-pressed="true"] {
+    color: var(--slate);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .finder-sum,
+  .hit-group {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .finder-sum { padding: 9px 16px 0; color: var(--gray-600); }
+  .finder-list { overflow-y: auto; padding: 2px 8px 10px; }
+  .hit-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 8px 4px;
+    color: var(--gray-500);
+  }
+  .hit {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    gap: 10px;
+    width: 100%;
+    padding: 8px;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    color: var(--slate);
+    cursor: pointer;
+  }
+  .hit.on { background: var(--gray-50); }
+  .hit .glyph { display: flex; padding-top: 2px; color: var(--gray-500); }
+  .hit svg { width: 15px; height: 15px; }
+  .hit-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .hit-text {
+    font-family: var(--sans);
+    font-size: 13.5px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+  .hit-text.mono { font-family: var(--mono); font-size: 12px; }
+  .hit-where,
+  .hit-date,
+  .finder-empty,
+  .finder-foot {
+    font-family: var(--mono);
+    color: var(--gray-600);
+  }
+  .hit-where { font-size: 10.5px; overflow-wrap: anywhere; }
+  .hit-date { font-size: 10px; padding-top: 3px; color: var(--gray-500); }
+  .finder mark { background: none; color: inherit; font-weight: 600; }
+  .finder-empty { font-size: 11px; padding: 16px 8px 8px; }
+  .finder-foot {
+    font-size: 10px;
+    color: var(--gray-500);
+    padding: 8px 16px 9px;
+    border-top: 1.5px solid var(--col-rule);
+  }
+  .card.found,
+  .card.found:hover {
+    border-color: var(--ink, var(--gray-500));
+    box-shadow: 0 0 0 1.5px var(--ink, var(--gray-500));
+  }
+  .file.found-chip { border-color: var(--ink, var(--gray-500)); }
+  .found-frame {
+    position: absolute;
+    z-index: 3;
+    pointer-events: none;
+    animation: found-fade 2.6s ease forwards;
+  }
+  .found-frame::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--frame-gap));
+    border: 2px solid var(--ink, var(--gray-500));
+    border-radius: calc(8px + var(--frame-gap));
+  }
+  #notesBody { --frame-gap: 7px; }
+  @keyframes found-fade {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    65% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
   @media (max-width: 940px) {
     .board { grid-template-columns: repeat(2, 1fr); }
     .col-divider { display: none; }
@@ -1422,7 +1594,7 @@
       <div>
         <div class="eyebrow">mother / board</div>
         <h1 id="trail">Mother Board</h1>
-        <div class="hintline">drag cards between columns <span class="toolsep">·</span> double-click a card to edit <span class="toolsep">·</span> hover for more options <span class="toolsep">·</span> ctrl-z/y to undo/redo</div>
+        <div class="hintline">drag cards between columns <span class="toolsep">·</span> double-click a card to edit <span class="toolsep">·</span> hover for more options <span class="toolsep">·</span> ctrl-z/y to undo/redo <span class="toolsep">·</span> / to search</div>
       </div>
       <div class="tools" id="tools">
         <button class="pill" id="tipsBtn" type="button" aria-haspopup="dialog">tips</button>
@@ -1437,6 +1609,7 @@
   <div class="toolbar" id="toolbar">
     <button class="fold" id="foldBtn" type="button" aria-controls="pagehead" aria-expanded="true" aria-label="Head of the page">›</button>
     <div class="summary" id="summary"></div>
+    <button class="seek" id="seekBtn" type="button" aria-haspopup="dialog">search<kbd>/</kbd></button>
     <div class="toolpair">
       <button class="pill" id="importBtn" type="button">import</button>
       <button class="pill" id="exportBtn" type="button" aria-haspopup="true" aria-expanded="false">export</button>
@@ -1457,6 +1630,23 @@
 <div class="toast" id="toast">
   <span id="toastMsg"></span>
   <button id="undoBtn">Undo</button>
+  <button id="backBtn" hidden>Back</button>
+</div>
+
+<div class="scrim" id="findScrim">
+  <section class="finder" role="dialog" aria-modal="true" aria-label="Search every board">
+    <div class="finder-in">
+      <input type="search" id="findInput" autocomplete="off" spellcheck="false"
+        placeholder="cards, notes, files, links, dates" aria-controls="findList" />
+      <div class="scope" id="findScope">
+        <button type="button" data-scope="all" aria-pressed="true">every board</button>
+        <button type="button" data-scope="here" aria-pressed="false">this board</button>
+      </div>
+    </div>
+    <div class="finder-sum" id="findSum"></div>
+    <div class="finder-list" id="findList" role="listbox"></div>
+    <div class="finder-foot">up/down to move <span class="toolsep">·</span> enter to open <span class="toolsep">·</span> esc to close</div>
+  </section>
 </div>
 
 <div class="scrim" id="scrim">
@@ -1532,6 +1722,10 @@
   var PICTURE = /!\[\[([^\[\]\n]+)\]\]/;
   var MOTHER = 'Mother Board';
   var GMAIL = 'https://mail.google.com/mail/?view=cm&fs=1';
+  var PICTURES = new RegExp(PICTURE.source, 'g');
+  var SEEK_ROOM = 110;
+  var SEEK_LEAD = 36;
+  var NOTE_WAIT = 500;
 
   function el(tag, cls, text) {
     var node = document.createElement(tag);
@@ -1575,6 +1769,7 @@
     left: 'M19 12H5 M12 19l-7-7 7-7',
     right: 'M5 12h14 M12 5l7 7-7 7',
     note: 'M12 20h9 M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z',
+    seek: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14Z M20 20l-4.2-4.2',
     abstract: 'M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2 '
        + 'M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z M8 12h8 M8 16h5',
     info: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20 M12 16v-5 M12 8h.01',
@@ -2467,10 +2662,13 @@
   }
 
   var toast = document.getElementById('toast');
+  var backTo = null;
 
-  function showToast(msg, undoable) {
+  function showToast(msg, undoable, back) {
     document.getElementById('toastMsg').textContent = msg;
     document.getElementById('undoBtn').hidden = !undoable;
+    document.getElementById('backBtn').hidden = !back;
+    backTo = back;
     toast.classList.add('on');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(hideToast, UNDO_TIME);
@@ -2482,6 +2680,10 @@
   }
 
   document.getElementById('undoBtn').addEventListener('click', undo);
+  document.getElementById('backBtn').addEventListener('click', function () {
+    hideToast();
+    enter(backTo);
+  });
 
   var menu = el('div', 'card-menu');
   menu.setAttribute('role', 'menu');
@@ -2580,6 +2782,9 @@
     var card = el('article', 'card');
     card.draggable = true;
     card.dataset.id = item.id;
+    if (sought && (item.id === sought.id || item.id === sought.note)) {
+      card.classList.add('found');
+    }
 
     var text = el('div', 'ctext');
     if (spec.head) text.appendChild(spec.head);
@@ -2881,10 +3086,12 @@
     var row = el('div', 'files');
     item.files.forEach(function (meta, i) {
       if (pictured(item, meta)) return;
-      row.appendChild(makeChip(meta, function () {
+      var chip = makeChip(meta, function () {
         item.files.splice(i, 1);
         discard('File removed');
-      }));
+      });
+      if (sought && meta.id === sought.file) chip.classList.add('found-chip');
+      row.appendChild(chip);
     });
     return row;
   }
@@ -3899,6 +4106,351 @@
   });
   buildTips();
 
+  var findScrim = document.getElementById('findScrim');
+  var findInput = document.getElementById('findInput');
+  var findList = document.getElementById('findList');
+  var findSum = document.getElementById('findSum');
+  var findScope = document.getElementById('findScope');
+  var seekBtn = document.getElementById('seekBtn');
+  var scopeAll = true;
+  var terms = [];
+  var hits = [];
+  var hitAt = 0;
+  var sought = null;
+
+  seekBtn.insertBefore(icon('seek'), seekBtn.firstChild);
+  findInput.parentNode.insertBefore(icon('seek'), findInput);
+
+  function clearSought() {
+    sought = null;
+    document.querySelectorAll('.found, .found-chip').forEach(function (n) {
+      n.classList.remove('found', 'found-chip');
+    });
+    document.querySelectorAll('.found-frame').forEach(function (n) {
+      n.remove();
+    });
+  }
+
+  function closeFinder() {
+    findScrim.classList.remove('on');
+  }
+
+  function dayAt(day) {
+    for (var i = 0; day.length && i + day.length <= terms.length; i++) {
+      if (day.every(function (w, k) { return terms[i + k] === w; })) return i;
+    }
+    return -1;
+  }
+
+  function drawHits() {
+    findList.textContent = '';
+    if (!terms.length) {
+      findSum.textContent = '';
+      findList.appendChild(el('div', 'finder-empty', 'Type a word. Search'
+        + ' looks in the text of cards and notes, in the names of files and'
+        + ' boards, in link addresses, and in dates typed in full.'));
+      return;
+    }
+    if (!hits.length) {
+      findSum.textContent = 'nothing found';
+      findList.appendChild(el('div', 'finder-empty',
+        'Nothing reads "' + findInput.value.trim() + '".'));
+      return;
+    }
+    var keys = hits.map(function (hit) { return hit.path.join('/'); });
+    var boards = keys.filter(function (k, i) { return keys.indexOf(k) === i; });
+    findSum.textContent = hits.length + ' found'
+      + (boards.length > 1 ? ' · ' + boards.length + ' boards' : '');
+    hits.forEach(function (hit, i) {
+      if (keys[i] !== keys[i - 1]) {
+        var head = el('div', 'hit-group');
+        head.appendChild(el('span', 'hit-group-name',
+          steps(hit.path).map(function (s) { return s.name; }).join(' / ')));
+        head.appendChild(el('span', null,
+          (keys[i] === path.join('/') ? 'you are here · ' : '')
+          + keys.filter(function (k) { return k === keys[i]; }).length));
+        findList.appendChild(head);
+      }
+      findList.appendChild(hitRow(hit, i));
+    });
+  }
+
+  function frameAround(node, box) {
+    var at = node.getBoundingClientRect();
+    var from = box.getBoundingClientRect();
+    var frame = el('div', 'found-frame');
+    frame.style.top = at.top - from.top + 'px';
+    frame.style.left = at.left - from.left + 'px';
+    frame.style.width = at.width + 'px';
+    frame.style.height = at.height + 'px';
+    frame.style.setProperty('--ink',
+      getComputedStyle(node).getPropertyValue('--ink'));
+    frame.addEventListener('animationend', function () { frame.remove(); });
+    box.appendChild(frame);
+  }
+
+  function hitRow(hit, i) {
+    var left = leftOf(hit);
+    var row = textBtn('hit' + (i === hitAt ? ' on' : ''));
+    row.setAttribute('role', 'option');
+    row.setAttribute('aria-selected', i === hitAt ? 'true' : 'false');
+    row.dataset.hit = hit.note || hit.file || hit.card.id;
+    row.appendChild(icon(hit.glyph));
+    var main = el('span', 'hit-main');
+    markTerms(main.appendChild(el('span', hit.file ? 'hit-text mono'
+      : 'hit-text')), snippetOf(hit.words, left), left);
+    var where = main.appendChild(el('span', 'hit-where', hit.where));
+    var link = pick(hit.links, function (l) {
+      return left.some(function (t) {
+        return l.toLowerCase().indexOf(t) >= 0
+          && hit.words.toLowerCase().indexOf(t) < 0;
+      });
+    });
+    if (link) {
+      where.appendChild(document.createTextNode(' · link '));
+      markTerms(where, link, left);
+    }
+    row.appendChild(main);
+    var date = row.appendChild(el('span', 'hit-date'));
+    date.appendChild(dayAt(hit.day) < 0 ? document.createTextNode(hit.date)
+      : el('mark', null, hit.date));
+    row.addEventListener('click', function () { reveal(hit); });
+    row.addEventListener('mousemove', function () {
+      if (hitAt === i) return;
+      hitAt = i;
+      paintHits(false);
+    });
+    return row;
+  }
+
+  function leftOf(hit) {
+    var at = dayAt(hit.day);
+    return at < 0 ? terms
+      : terms.slice(0, at).concat(terms.slice(at + hit.day.length));
+  }
+
+  function markTerms(node, s, words) {
+    if (!words.length) {
+      node.appendChild(document.createTextNode(s));
+      return;
+    }
+    var re = new RegExp('(' + words.map(function (w) {
+      return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }).join('|') + ')', 'gi');
+    s.split(re).forEach(function (part, i) {
+      if (!part) return;
+      node.appendChild(i % 2 ? el('mark', null, part)
+        : document.createTextNode(part));
+    });
+  }
+
+  function moveHit(step) {
+    if (!hits.length) return;
+    hitAt = (hitAt + step + hits.length) % hits.length;
+    paintHits(true);
+  }
+
+  function openFinder() {
+    closeNotes();
+    closeTips();
+    findScrim.classList.add('on');
+    findInput.focus();
+    findInput.select();
+    runSearch();
+  }
+
+  function paintHits(scroll) {
+    findList.querySelectorAll('.hit').forEach(function (row, i) {
+      row.classList.toggle('on', i === hitAt);
+      row.setAttribute('aria-selected', i === hitAt ? 'true' : 'false');
+      if (i === hitAt && scroll) row.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  function reveal(hit) {
+    closeFinder();
+    clearSought();
+    var said = [];
+    var back = hit.path.join('/') === path.join('/') ? null : path;
+    if (back) said.push('stepped into ' + steps(hit.path).pop().name);
+    var home = hit.home;
+    if ((home.folded || []).indexOf(hit.col) >= 0) {
+      home.folded = home.folded.filter(function (k) { return k !== hit.col; });
+      said.push('opened ' + colOf(hit.col).label);
+    }
+    if (hit.head && hit.head.folded) {
+      hit.head.folded = false;
+      said.push('opened the deck');
+    }
+    if (hit.head && hit.head.doneFolded && isDone(hit.card)) {
+      hit.head.doneFolded = false;
+      said.push('showed its done cards');
+    }
+    keepBoard(JSON.stringify(state));
+    sought = { id: hit.card.id, note: hit.note, file: hit.file };
+    path = hit.path;
+    enter(path);
+    show();
+    var node = board.querySelector('.card[data-id="' + hit.card.id + '"]');
+    node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    if (hit.note) {
+      setTimeout(function () {
+        openNotes(hit.card.id);
+        frameAround(notesBody.querySelector('.card[data-id="' + hit.note
+          + '"]'), notesBody);
+      }, NOTE_WAIT);
+    } else {
+      frameAround(node, board);
+    }
+    if (said.length) {
+      var s = said.join(', ');
+      showToast(s.charAt(0).toUpperCase() + s.slice(1), false, back);
+    }
+    document.addEventListener('pointerdown', clearSought,
+      { once: true, capture: true });
+  }
+
+  function runSearch() {
+    terms = findInput.value.toLowerCase().split(/\s+/).filter(Boolean);
+    var at = path.join('/');
+    var all = terms.length ? searchIndex().filter(function (hit) {
+      return (scopeAll || hit.path.join('/') === at)
+        && leftOf(hit).every(function (t) { return hit.hay.indexOf(t) >= 0; });
+    }) : [];
+    hits = all.filter(function (hit) { return hit.path.join('/') === at; })
+      .concat(all.filter(function (hit) { return hit.path.join('/') !== at; }));
+    hitAt = 0;
+    drawHits();
+  }
+
+  function searchIndex() {
+    var out = [];
+    (function walk(home, at) {
+      KEYS.forEach(function (k) {
+        home.cols[k].forEach(function (c) {
+          seekEntries(out, c, { home: home, path: at, col: k, head: null });
+          c.cards.forEach(function (d) {
+            seekEntries(out, d, { home: home, path: at, col: k, head: c });
+          });
+        });
+      });
+      KEYS.forEach(function (k) {
+        home.cols[k].forEach(function (c) {
+          if (c.board) walk(c.board, at.concat(c.id));
+        });
+      });
+    })(state, []);
+    return out;
+  }
+
+  function seekEntries(out, item, where) {
+    var col = colOf(where.col).label
+      + ((where.home.folded || []).indexOf(where.col) >= 0 ? ' (folded)' : '');
+    var owner = col + ' · on ' + cardTitle(item);
+    var seen = shownText(item.text);
+    var kind = item.board ? 'board' : where.head ? 'in deck' : 'card';
+    var more = item.board
+      ? ' · ' + plural(boardSize(item.board), 'card') + ' inside'
+      : where.head ? ' · ' + cardTitle(where.head)
+        + (isDone(item) ? ' · done' : '')
+      : (item.pinned ? ' · pinned' : '') + (item.low ? ' · low' : '');
+    out.push(seekHit(where, item, {
+      glyph: item.board ? 'board' : where.head ? 'deck'
+        : colOf(where.col).mark,
+      words: seen.words, links: seen.links, date: fmtDate(item.created),
+      where: kind + ' · ' + col + more }));
+    item.notes.forEach(function (note) {
+      var said = shownText(note.text);
+      out.push(seekHit(where, item, { note: note.id, glyph: 'note',
+        words: said.words, links: said.links, date: fmtDate(note.created),
+        where: 'note · ' + owner }));
+    });
+    item.files.forEach(function (meta) {
+      out.push(seekHit(where, item, { file: meta.id, glyph: 'clip',
+        words: meta.name, date: fmtDate(item.created),
+        where: 'file · ' + owner + ' · ' + fmtSize(meta.size) }));
+    });
+  }
+
+  function seekHit(where, card, own) {
+    var hit = { home: where.home, path: where.path, col: where.col,
+      head: where.head, card: card, note: null, file: null, links: [] };
+    Object.keys(own).forEach(function (k) { hit[k] = own[k]; });
+    hit.hay = (hit.words + '\n' + hit.links.join('\n')).toLowerCase();
+    hit.day = hit.file ? [] : hit.date.toLowerCase().split(/\s+/);
+    return hit;
+  }
+
+  function shownText(text) {
+    var words = [];
+    var links = [];
+    function inline(s) {
+      return inlineSpans(s).map(function (seg) {
+        if (seg.href && seg.href !== seg.text) links.push(seg.href);
+        return seg.text;
+      }).join('').replace(PICTURES, '');
+    }
+    (function walk(list) {
+      list.forEach(function (b) {
+        var call = b.kind === 'quote' && calloutOf(b.text);
+        if (b.kind === 'code') words.push(b.lines.join('\n'));
+        else if (b.kind === 'list') {
+          b.items.forEach(function (item) {
+            words.push(inline(item.text));
+            walk(item.blocks);
+          });
+        } else if (call) {
+          words.push(call.title);
+          walk(blocks(call.body));
+        } else if (b.text != null) words.push(inline(b.text));
+      });
+    })(blocks(text));
+    return { words: words.join('\n'), links: links };
+  }
+
+  function snippetOf(words, left) {
+    var s = words.replace(/\n+/g, ' · ');
+    if (s.length <= SEEK_ROOM) return s;
+    var at = left.length ? Math.max(0, s.toLowerCase().indexOf(left[0])) : 0;
+    var start = Math.max(0, at - SEEK_LEAD);
+    var end = Math.min(s.length, start + SEEK_ROOM);
+    return (start ? '...' : '') + s.slice(start, end)
+      + (end < s.length ? '...' : '');
+  }
+
+  seekBtn.addEventListener('click', openFinder);
+  findInput.addEventListener('input', runSearch);
+  findInput.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveHit(e.key === 'ArrowDown' ? 1 : -1);
+    } else if (e.key === 'Enter' && hits.length) {
+      e.preventDefault();
+      reveal(hits[hitAt]);
+    }
+  });
+  findScrim.addEventListener('click', function (e) {
+    if (e.target === findScrim) closeFinder();
+  });
+  findScope.querySelectorAll('button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      scopeAll = b.dataset.scope === 'all';
+      findScope.querySelectorAll('button').forEach(function (x) {
+        x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+      });
+      findInput.focus();
+      runSearch();
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    var slash = e.key === '/' && !e.ctrlKey && !e.metaKey
+      && !e.target.closest('textarea, input');
+    var ctrlK = (e.ctrlKey || e.metaKey) && e.key === 'k';
+    if (!slash && !ctrlK) return;
+    e.preventDefault();
+    openFinder();
+  });
+
   function render() {
     closeMenu();
     renderTrail();
@@ -4665,6 +5217,7 @@
     closeClearAsks();
     closeNotes();
     closeTips();
+    closeFinder();
   });
   document.addEventListener('keydown', function (e) {
     var go = { z: undo, y: redo }[e.key];

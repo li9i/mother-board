@@ -120,4 +120,10 @@ The list follows the sequence of the tests in the file.
 
 - `a low card dragged to another column stays low`: it drags a low card from Backlog to Now. It makes sure that the card is low in Now, and that it shows dim.
 
+- `search finds cards, notes, decks, files, links and dates on every board`: it opens search with the **/** key. It makes sure that one word finds a card, a file, a note, a card in a deck and a card on a board inside the board. It makes sure that the list puts them below the name of each board. It also makes sure that search finds the address behind a link and a date typed in full. A part of the date and the marks in the text find nothing. Last, it makes sure that **this board** keeps only the board you are in, that Escape closes the window and that Ctrl+K opens it.
+
+- `a search result opens its board, column and deck and rings the card`: it makes sure that Enter on a result steps into the board of the card. Search opens the folded column and saves the column open. The card gets a ring and an outline, and the toast tells what search did and offers **Back**. The test then makes sure that **Back** returns to the first board. A result in a folded deck opens the deck and its done cards, and the next click removes the ring.
+
+- `a note result opens the notes window and a file result rings its chip`: it makes sure that a note result opens the notes window of its card, with a ring and an outline on the note. It also makes sure that a file result puts a ring on the chip of the file.
+
 The tests examine the checksum of each file that they read from a zip. For more information, refer to [behaviour.md](behaviour.md#storage).

@@ -2304,3 +2304,168 @@ test('a low card dragged to another column stays low', async () => {
 
   assert.deepStrictEqual(seen, { now: ['n', 'L low'], dim: true });
 });
+
+function searchFor(words) {
+  const box = document.querySelector('#findInput');
+  box.value = words;
+  box.dispatchEvent(new Event('input', { bubbles: true }));
+  return Array.from(document.querySelectorAll('#findList .hit'))
+    .map((h) => h.dataset.hit);
+}
+
+function groupsShown() {
+  return Array.from(document.querySelectorAll('#findList .hit-group-name'))
+    .map((n) => n.textContent);
+}
+
+function foundShown() {
+  return { rings: Array.from(document.querySelectorAll('.found'))
+    .map((n) => n.dataset.id),
+  chips: document.querySelectorAll('.found-chip').length,
+  frames: document.querySelectorAll('.found-frame').length };
+}
+
+function finderOpen() {
+  return document.querySelector('#findScrim').classList.contains('on');
+}
+
+test('search finds cards, notes, decks, files, links and dates on every board',
+  async () => {
+    const day = Date.UTC(2026, 9, 6, 12);
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], accomplished: [],
+        backlog: [
+          { id: 'a', text: 'Borrow the van', created: day },
+          { id: 'l', text: '[Bike service](https://bikes.example/slots)',
+            created: 1 },
+          { id: 'f', text: 'Receipts', created: 1, files: [{ id: 'f1',
+            name: 'van-receipt.pdf', type: 'application/pdf', size: 2048 }] },
+          { id: 'g', text: 'Garden', created: 1, board: { cols: {
+            backlog: [{ id: 'gi', text: 'Tom has a **van**', created: 1 }] } } }
+        ],
+        now: [{ id: 'h', text: 'Move house', created: 1,
+          notes: [{ id: 'hn', text: 'Van hire is 85 a day', created: 1 }],
+          cards: [{ id: 'd', text: 'Book the van\n- [y] Saturday',
+            created: 1 }] }] } });
+      await page.go();
+      const shown = {};
+      await page.run(call(keyIn, 'body', '/'));
+      shown.bySlash = await page.run(call(finderOpen));
+      shown.van = await page.run(call(searchFor, 'van'));
+      shown.groups = await page.run(call(groupsShown));
+      shown.link = await page.run(call(searchFor, 'bikes.example'));
+      const date = await page.run('new Date(' + day + ').toLocaleDateString('
+        + 'undefined, { month: "short", day: "numeric" })');
+      shown.date = await page.run(call(searchFor, date));
+      shown.part = await page.run(call(searchFor, date.split(' ')[0]));
+      shown.marks = await page.run(call(searchFor, '[y]'));
+      await page.run(call(press, '#findScrim', 'this board'));
+      shown.here = await page.run(call(searchFor, 'van'));
+      await page.run(call(keyIn, '#findInput', 'Escape'));
+      shown.byEscape = await page.run(call(finderOpen));
+      await page.run(call(ctrlIn, 'body', 'k'));
+      shown.byCtrlK = await page.run(call(finderOpen));
+      return shown;
+    });
+
+    assert.deepStrictEqual(seen, {
+      bySlash: true,
+      van: ['a', 'f1', 'hn', 'd', 'gi'],
+      groups: ['Mother Board', 'Mother Board / Garden'],
+      link: ['l'],
+      date: ['a'],
+      part: [],
+      marks: [],
+      here: ['a', 'f1', 'hn', 'd'],
+      byEscape: false,
+      byCtrlK: true
+    });
+  });
+
+test('a search result opens its board, column and deck and rings the card',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], accomplished: [],
+        backlog: [{ id: 'g', text: 'Garden', created: 1, board: {
+          folded: ['backlog'], cols: {
+            backlog: [{ id: 'gi', text: 'Borrow a trailer', created: 1 }] } } }],
+        now: [{ id: 'h', text: 'Move house', created: 1, folded: true,
+          doneFolded: true, cards: [
+            { id: 'o', text: 'Pack', created: 1 },
+            { id: 'd', text: 'Book the van\n- [y] Saturday', created: 1 }] }] } });
+      await page.go();
+      const shown = {};
+      const toast = () => page.run('({ text: document.querySelector('
+        + '"#toastMsg").textContent, back: !document.querySelector('
+        + '"#backBtn").hidden })');
+      await page.run('document.querySelector("#seekBtn").click()');
+      await page.run(call(searchFor, 'trailer'));
+      await page.run(call(keyIn, '#findInput', 'Enter'));
+      await until(() => page.run('!!document.querySelector(\''
+        + cardOf('gi') + '\')'));
+      shown.inside = { at: await page.run('location.hash'),
+        parts: await page.run(call(partsShown, 'backlog')),
+        found: await page.run(call(foundShown)), toast: await toast(),
+        folded: (await stored(page, STORE)).cols.backlog[0].board.folded };
+      await page.run('document.querySelector("#backBtn").click()');
+      await until(() => page.run('!!document.querySelector(\''
+        + cardOf('g') + '\')'));
+      shown.back = await page.run('location.hash');
+      await page.run(call(keyIn, 'body', '/'));
+      await page.run(call(searchFor, 'saturday'));
+      await page.run('document.querySelector("#findList .hit").click()');
+      const deck = (await stored(page, STORE)).cols.now[0];
+      shown.deck = { folded: deck.folded, doneFolded: deck.doneFolded,
+        found: await page.run(call(foundShown)), toast: await toast() };
+      await page.run('document.body.dispatchEvent(new PointerEvent('
+        + '"pointerdown", { bubbles: true }))');
+      shown.cleared = await page.run(call(foundShown));
+      return shown;
+    });
+
+    assert.deepStrictEqual(seen, {
+      inside: { at: '#g', parts: ['col-head', 'col-add', 'col-body'],
+        found: { rings: ['gi'], chips: 0, frames: 1 },
+        toast: { text: 'Stepped into Garden, opened Backlog', back: true },
+        folded: [] },
+      back: '',
+      deck: { folded: false, doneFolded: false,
+        found: { rings: ['d'], chips: 0, frames: 1 },
+        toast: { text: 'Opened the deck, showed its done cards',
+          back: false } },
+      cleared: { rings: [], chips: 0, frames: 0 }
+    });
+  });
+
+test('a note result opens the notes window and a file result rings its chip',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [], backlog: [{ id: 'c', text: 'Move house',
+          created: 1, notes: [{ id: 'n', text: 'Van hire is 85 a day',
+            created: 1 }], files: [{ id: 'f1', name: 'lease.pdf',
+            type: 'application/pdf', size: 2048 }] }] } });
+      await page.go();
+      const shown = {};
+      await page.run(call(keyIn, 'body', '/'));
+      await page.run(call(searchFor, 'hire'));
+      await page.run(call(keyIn, '#findInput', 'Enter'));
+      await until(() => page.run('document.querySelector("#scrim")'
+        + '.classList.contains("on")'));
+      shown.note = await page.run(call(foundShown));
+      shown.inNotes = await page.run('!!document.querySelector('
+        + '"#notesBody .found-frame")');
+      await page.run(call(keyIn, 'body', 'Escape'));
+      await page.run(call(keyIn, 'body', '/'));
+      await page.run(call(searchFor, 'lease'));
+      await page.run(call(keyIn, '#findInput', 'Enter'));
+      shown.file = await page.run(call(foundShown));
+      return shown;
+    });
+
+    assert.deepStrictEqual(seen, {
+      note: { rings: ['c', 'n'], chips: 0, frames: 1 },
+      inNotes: true,
+      file: { rings: ['c'], chips: 1, frames: 1 }
+    });
+  });
