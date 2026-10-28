@@ -2470,6 +2470,44 @@ test('a note result opens the notes window and a file result rings its chip',
     });
   });
 
+function growNote(id, height) {
+  const pad = document.createElement('div');
+  pad.style.height = height + 'px';
+  document.querySelector('#notesBody .card[data-id="' + id + '"]')
+    .appendChild(pad);
+}
+
+function frameFit(id) {
+  const box = (node) => {
+    const at = node.getBoundingClientRect();
+    return [at.left, at.top, at.width, at.height].map(Math.round);
+  };
+  return { note: box(document.querySelector('#notesBody .card[data-id="'
+    + id + '"]')), frame: box(document.querySelector('.found-frame')) };
+}
+
+test('the outline of a found note follows the note when it grows',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [], backlog: [{ id: 'c', text: 'Move house',
+          created: 1, notes: [{ id: 'm', text: 'Book the van', created: 1 },
+            { id: 'n', text: 'Van hire is 85 a day', created: 2 }] }] } });
+      await page.go();
+      await page.run(call(keyIn, 'body', '/'));
+      await page.run(call(searchFor, 'hire'));
+      await page.run(call(keyIn, '#findInput', 'Enter'));
+      await until(() => page.run('!!document.querySelector('
+        + '"#notesBody .found-frame")'));
+      await page.run(call(growNote, 'm', 80));
+      await page.run(call(growNote, 'n', 200));
+      await pause(100);
+      return page.run(call(frameFit, 'n'));
+    });
+
+    assert.deepStrictEqual(seen.frame, seen.note);
+  });
+
 function pastShown() {
   return Array.from(document.querySelectorAll('#findList .past'))
     .map((n) => n.textContent);

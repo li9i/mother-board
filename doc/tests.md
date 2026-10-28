@@ -126,6 +126,8 @@ The list follows the sequence of the tests in the file.
 
 - `a note result opens the notes window and a file result rings its chip`: it makes sure that a note result opens the notes window of its card, with a ring and an outline on the note. It also makes sure that a file result puts a ring on the chip of the file.
 
+- `the outline of a found note follows the note when it grows`: it opens a note result. It then makes the note above it and the note itself taller. It makes sure that the outline then has the same place and size as the note.
+
 - `the empty search box lists the last five searches that opened a result`: it opens a result for six different words, and then for the first word again. It makes sure that the empty box lists the last five of these words, newest first, with no word twice. It makes sure that a word that opened no result is not on the list, and that the list stays after a reload. Last, it makes sure that a click on a word in the list runs that search again.
 
 - `words in quotes match only when they stand side by side`: it makes sure that two words without quotes find the two cards that hold them. The same words in quotes find only the card where they stand side by side, and the row shows them in bold as one. It also makes sure that a quote that is not closed counts as separate words, and that a date in quotes finds its card.

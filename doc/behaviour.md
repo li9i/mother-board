@@ -176,7 +176,7 @@ The **/** key opens a window where you type what you look for, and so does Ctrl+
 **Opening a result** takes you to its card:
 
 - If the card is on a different board, search steps into that board. A folded column, a folded deck or folded done cards open to show the card, and they stay open. A fold is not a step, so Ctrl+Z does not fold them again.
-- The page scrolls the card to the middle of the screen and puts a ring in the colour of its column around it. A second, larger outline shows around the ring for about two seconds and then fades. The ring stays until your next click.
+- The page scrolls the card to the middle of the screen and puts a ring in the colour of its column around it. A second, larger outline shows around the ring. If the card grows or moves while the outline shows, for example when a picture in the card loads, the outline follows it. After about two seconds, the ring and the outline fade together. A grey outline then stays on the card until your next click.
 - A note opens the notes window of its card, with a ring and an outline around the note. A file also gets a ring around its chip.
 - When search steps into a board or opens a fold, the toast tells what it did, such as `Stepped into Garden, opened Backlog`. If search stepped into a different board, the toast offers **Back**, which returns to the board you were on.
 

@@ -27,7 +27,8 @@
     --serif: ui-serif, Georgia, "Times New Roman", serif;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    --frame-gap: 12px;
+    --frame-gap: 16px;
+    --found-time: 2.6s;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -1532,17 +1533,16 @@
     padding: 8px 16px 9px;
     border-top: 1.5px solid var(--col-rule);
   }
-  .card.found,
-  .card.found:hover {
-    border-color: var(--ink, var(--gray-500));
-    box-shadow: 0 0 0 1.5px var(--ink, var(--gray-500));
+  .card.found {
+    border-color: var(--gray-500);
+    animation: found-ring var(--found-time) ease;
   }
   .file.found-chip { border-color: var(--ink, var(--gray-500)); }
   .found-frame {
     position: absolute;
     z-index: 3;
     pointer-events: none;
-    animation: found-fade 2.6s ease forwards;
+    animation: found-fade var(--found-time) ease forwards;
   }
   .found-frame::before {
     content: "";
@@ -1551,12 +1551,18 @@
     border: 2px solid var(--ink, var(--gray-500));
     border-radius: calc(8px + var(--frame-gap));
   }
-  #notesBody { --frame-gap: 7px; }
+  #notesBody { --frame-gap: 9px; }
   @keyframes found-fade {
     0% { opacity: 0; }
     10% { opacity: 1; }
     65% { opacity: 1; }
     100% { opacity: 0; }
+  }
+  @keyframes found-ring {
+    0%, 65% {
+      border-color: var(--ink, var(--gray-500));
+      box-shadow: 0 0 0 1.5px var(--ink, var(--gray-500));
+    }
   }
 
   @media (max-width: 940px) {
@@ -4186,17 +4192,21 @@
   }
 
   function frameAround(node, box) {
-    var at = node.getBoundingClientRect();
-    var from = box.getBoundingClientRect();
     var frame = el('div', 'found-frame');
-    frame.style.top = at.top - from.top + 'px';
-    frame.style.left = at.left - from.left + 'px';
-    frame.style.width = at.width + 'px';
-    frame.style.height = at.height + 'px';
     frame.style.setProperty('--ink',
       getComputedStyle(node).getPropertyValue('--ink'));
     frame.addEventListener('animationend', function () { frame.remove(); });
     box.appendChild(frame);
+    (function follow() {
+      if (!frame.isConnected) return;
+      var at = node.getBoundingClientRect();
+      var from = box.getBoundingClientRect();
+      frame.style.top = at.top - from.top + 'px';
+      frame.style.left = at.left - from.left + 'px';
+      frame.style.width = at.width + 'px';
+      frame.style.height = at.height + 'px';
+      requestAnimationFrame(follow);
+    })();
   }
 
   function hitRow(hit, i) {
