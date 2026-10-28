@@ -1649,7 +1649,7 @@
     </div>
     <div class="finder-sum" id="findSum"></div>
     <div class="finder-list" id="findList" role="listbox"></div>
-    <div class="finder-foot">up/down to move <span class="toolsep">·</span> enter to open <span class="toolsep">·</span> esc to close</div>
+    <div class="finder-foot">up/down to move <span class="toolsep">·</span> enter to open <span class="toolsep">·</span> esc to close <span class="toolsep">·</span> "two words" to find them side by side</div>
   </section>
 </div>
 
@@ -4235,8 +4235,8 @@
     }
     row.appendChild(main);
     var date = row.appendChild(el('span', 'hit-date'));
-    date.appendChild(dayAt(hit.day) < 0 ? document.createTextNode(hit.date)
-      : el('mark', null, hit.date));
+    date.appendChild(left.length === terms.length
+      ? document.createTextNode(hit.date) : el('mark', null, hit.date));
     row.addEventListener('click', function () { reveal(hit); });
     row.addEventListener('mousemove', function () {
       if (hitAt === i) return;
@@ -4252,6 +4252,10 @@
   }
 
   function leftOf(hit) {
+    var whole = terms.indexOf(hit.day.join(' '));
+    if (hit.day.length && whole >= 0) {
+      return terms.slice(0, whole).concat(terms.slice(whole + 1));
+    }
     var at = dayAt(hit.day);
     return at < 0 ? terms
       : terms.slice(0, at).concat(terms.slice(at + hit.day.length));
@@ -4344,7 +4348,9 @@
   }
 
   function runSearch() {
-    terms = findInput.value.toLowerCase().split(/\s+/).filter(Boolean);
+    terms = (findInput.value.toLowerCase().match(/"[^"]+"|\S+/g) || [])
+      .map(function (t) { return t.replace(/"/g, '').trim(); })
+      .filter(Boolean);
     var at = path.join('/');
     var all = terms.length ? searchIndex().filter(function (hit) {
       return (scopeAll || hit.path.join('/') === at)

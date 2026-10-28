@@ -165,8 +165,9 @@ A card can hold a board of its own. Such a card is a board card. The top board i
 **search**, on the line of counts, opens a window where you type what you look for. The **/** key opens it too, and so does Ctrl+K. The line of counts stays in view when you scroll, so search is always near. Escape or a click outside closes the window.
 
 - Search looks in every board at once. It looks in the text of each card and note, as the card shows it. It also looks in the names of files and boards, and in the address behind a link that shows only its words. The marks in the text, such as `**` or `- [ ]`, are not part of the search.
-- A date matches only when you type it in full, as the card shows it, such as `Oct 6`. Then search finds the cards and notes that you wrote on that day. A part of a date, such as `oct` or `6`, does not find a card by its date.
+- A date matches only when you type it in full, as the card shows it, such as `Oct 6`. It can also be in quotes. Then search finds the cards and notes that you wrote on that day. A part of a date, such as `oct` or `6`, does not find a card by its date.
 - Each word that you type must be in the result, in any order. Case does not matter.
+- Words in double quotes, such as `"mill road"`, must stand side by side, in that order. A quote that you have not closed yet counts as separate words, so the list does not go empty while you type.
 - The list puts the board you are in first and the other boards after it. Each board has its trail as a head, such as `Mother Board / Garden`. Each row shows the words around the match, with the match in bold. Below them, the row tells what the result is: `card`, `in deck`, `note`, `file` or `board`. It also gives the column and, for a note or a file, its card. A match in the address of a link shows that address in the row.
 - **this board** keeps only the results on the board you are in. **every board** is the default.
 - The up and down arrow keys move through the list. Enter or a click opens the result.

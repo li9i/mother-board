@@ -2509,3 +2509,30 @@ test('the empty search box lists the last five searches that opened a result',
     assert.deepStrictEqual(seen, { kept, reloaded: kept,
       again: { words: 'alpha', hits: ['alpha'] } });
   });
+
+test('words in quotes match only when they stand side by side', async () => {
+  const day = Date.UTC(2026, 9, 6, 12);
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, { cols: { remember: [], now: [], accomplished: [],
+      backlog: [
+        { id: 'n', text: 'Van hire from the depot on Mill Road.', created: 1 },
+        { id: 'r', text: 'Take the long road. The old mill is shut.',
+          created: 1 },
+        { id: 'q', text: 'Dentist', created: day }] } });
+    await page.go();
+    await page.run(call(keyIn, 'body', '/'));
+    const date = await page.run('new Date(' + day + ').toLocaleDateString('
+      + 'undefined, { month: "short", day: "numeric" })');
+    return {
+      words: await page.run(call(searchFor, 'mill road')),
+      phrase: await page.run(call(searchFor, '"mill road"')),
+      bold: await page.run('Array.from(document.querySelectorAll('
+        + '"#findList .hit mark")).map((m) => m.textContent)'),
+      open: await page.run(call(searchFor, '"mill road')),
+      date: await page.run(call(searchFor, '"' + date + '"'))
+    };
+  });
+
+  assert.deepStrictEqual(seen, { words: ['n', 'r'], phrase: ['n'],
+    bold: ['Mill Road'], open: ['n', 'r'], date: ['q'] });
+});

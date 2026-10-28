@@ -128,4 +128,6 @@ The list follows the sequence of the tests in the file.
 
 - `the empty search box lists the last five searches that opened a result`: it opens a result for six different words, and then for the first word again. It makes sure that the empty box lists the last five of these words, newest first, with no word twice. It makes sure that a word that opened no result is not on the list, and that the list stays after a reload. Last, it makes sure that a click on a word in the list runs that search again.
 
+- `words in quotes match only when they stand side by side`: it makes sure that two words without quotes find the two cards that hold them. The same words in quotes find only the card where they stand side by side, and the row shows them in bold as one. It also makes sure that a quote that is not closed counts as separate words, and that a date in quotes finds its card.
+
 The tests examine the checksum of each file that they read from a zip. For more information, refer to [behaviour.md](behaviour.md#storage).
