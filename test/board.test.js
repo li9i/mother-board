@@ -1639,6 +1639,112 @@ test('a picture pasted in the box for a new card or note comes with it',
     assert.deepStrictEqual(seen.editedShown, [PIC_SHOWN]);
   });
 
+const REPORT = ['report.pdf', '%PDF-1.4', 'application/pdf'];
+
+function chipsIn(selector) {
+  return Array.from(document.querySelectorAll(selector + ' .file-name'),
+    (name) => name.textContent);
+}
+
+async function waiting(page, box, textarea, files) {
+  await page.run(call(ready, files, PIC));
+  await page.run(call(dropMade, textarea, false));
+  return until(async () => {
+    const shown = await page.run(call(chipsIn, box));
+    return shown.length === files.length && shown;
+  });
+}
+
+test('a file dropped in the box for a new card or note waits as a chip',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, withLists('Shoes', COLOURS));
+      await page.go();
+      const box = '#board .composer.on';
+      const add = box + ' textarea';
+      const backlog = async () => (await stored(page, STORE)).cols.backlog;
+      const out = {};
+      await page.run(call(clickButton, '+ add to backlog'));
+      await page.run(call(setValue, add, 'Left behind'));
+      await waiting(page, box, add, [REPORT]);
+      await page.run(call(keyIn, add, 'Escape'));
+      await page.run(call(clickButton, '+ add to backlog'));
+      out.afterEscape = await page.run(call(chipsIn, box));
+      await page.run(call(setValue, add, 'Report'));
+      out.waiting = await waiting(page, box, add, [REPORT]);
+      out.typed = await page.run(call(valueOf, add));
+      await page.run(call(keyIn, add, 'Enter', true));
+      out.card = (await backlog())[0];
+      out.chips = await page.run(call(chipsIn, cardOf(out.card.id)));
+      await page.run(call(clickButton, '+ add to backlog'));
+      await waiting(page, box, add, [REPORT, RAW]);
+      await page.run('document.querySelector(' + JSON.stringify(
+        box + ' [aria-label="Remove report.pdf"]') + ').click()');
+      out.removed = await page.run(call(chipsIn, box));
+      await page.run(call(keyIn, add, 'Enter', true));
+      out.named = (await backlog())[0];
+      out.count = (await backlog()).length;
+      await page.run('document.querySelector(\'' + cardOf('a')
+        + ' .notemark\').click()');
+      const note = '#notes .composer.on';
+      await page.run(call(clickButton, '+ add a note'));
+      await page.run(call(setValue, note + ' textarea', 'New note'));
+      await waiting(page, note, note + ' textarea', [REPORT]);
+      await page.run(call(keyIn, note + ' textarea', 'Enter', true));
+      out.note = cardA(await stored(page, STORE)).notes[1];
+      return out;
+    });
+
+    assert.deepStrictEqual(seen.afterEscape, []);
+    assert.deepStrictEqual(seen.waiting, ['report.pdf']);
+    assert.strictEqual(seen.typed, 'Report');
+    assert.strictEqual(seen.card.text, 'Report');
+    assert.deepStrictEqual(names(seen.card), ['report.pdf']);
+    assert.deepStrictEqual(seen.chips, ['report.pdf']);
+    assert.deepStrictEqual(seen.removed, ['data.bin']);
+    assert.strictEqual(seen.named.text, 'data.bin');
+    assert.deepStrictEqual(names(seen.named), ['data.bin']);
+    assert.strictEqual(seen.count, 3);
+    assert.strictEqual(seen.note.text, 'New note');
+    assert.deepStrictEqual(names(seen.note), ['report.pdf']);
+  });
+
+test('a file dropped in an edit box comes with the text as it is',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, withLists('Shoes', COLOURS));
+      await page.go();
+      const head = '#notes .notes-of';
+      const out = {};
+      await page.run(call(editCard, 'a'));
+      await waiting(page, head, WHAT_EDIT, [REPORT, RAW]);
+      const cross = await page.run(call(middleOf,
+        head + ' [aria-label="Remove report.pdf"]'));
+      await page.mouse('mousePressed', cross.x, cross.y);
+      await page.mouse('mouseReleased', cross.x, cross.y);
+      out.removed = await page.run(call(chipsIn, head));
+      out.editing = await page.run('document.activeElement.matches('
+        + JSON.stringify(WHAT_EDIT) + ')');
+      await page.run(call(keyIn, WHAT_EDIT, 'Enter', true));
+      out.card = cardA(await stored(page, STORE));
+      const note = '#notes ' + cardOf('n');
+      await page.run('document.querySelector(\'' + note
+        + ' .ctext\').dispatchEvent(new MouseEvent("dblclick",'
+        + ' { bubbles: true }))');
+      await waiting(page, note, note + ' textarea', [REPORT]);
+      await page.run(call(keyIn, note + ' textarea', 'Enter', true));
+      out.note = noteN(await stored(page, STORE));
+      return out;
+    });
+
+    assert.deepStrictEqual(seen.removed, ['data.bin']);
+    assert.strictEqual(seen.editing, true);
+    assert.strictEqual(seen.card.text, 'Shoes');
+    assert.deepStrictEqual(names(seen.card), ['data.bin']);
+    assert.strictEqual(seen.note.text, COLOURS);
+    assert.deepStrictEqual(names(seen.note), ['report.pdf']);
+  });
+
 async function madeBytes() {
   const bytes = new Uint8Array(await window.made[0].arrayBuffer());
   return btoa(String.fromCharCode(...bytes));

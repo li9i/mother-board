@@ -822,6 +822,7 @@
     margin-bottom: 7px;
     opacity: var(--fade, 1);
   }
+  .files:empty { display: none; }
   .notes-of .files { margin: 8px 0 0; }
   .file {
     display: flex;
@@ -2030,7 +2031,7 @@
     box.appendChild(row);
     host.appendChild(add);
     host.appendChild(box);
-    takePictures(ta, function () { return []; });
+    takeFiles(ta, function () { return []; });
 
     function open() {
       closeComposers();
@@ -2044,7 +2045,7 @@
       box.classList.remove('on');
       add.style.display = '';
       ta.value = '';
-      ta.pictures = [];
+      clearWaiting(ta);
     }
 
     function showBurst() {
@@ -2056,10 +2057,10 @@
     }
 
     function submit() {
-      var text = ta.value.trim();
+      var text = wordsOf(ta);
       if (!text) { close(); return; }
       ta.value = '';
-      spec.onAdd(text, keptPictures(ta, text));
+      spec.onAdd(text, keptFiles(ta, text));
       if (burst) { ta.focus(); return; }
       close();
       add.focus();
@@ -2665,7 +2666,7 @@
     ta.value = item.text;
     card.draggable = false;
     card.replaceChild(ta, text);
-    takePictures(ta, function () { return item.files; });
+    takeFiles(ta, function () { return item.files; });
 
     function fit() {
       ta.style.height = 'auto';
@@ -2683,10 +2684,10 @@
       done = true;
       card.draggable = true;
       if (keep) {
-        var v = ta.value.trim();
+        var v = wordsOf(ta);
         if (v) {
           item.text = v;
-          item.files.push.apply(item.files, keptPictures(ta, v));
+          item.files.push.apply(item.files, keptFiles(ta, v));
           save();
         }
       }
@@ -2703,6 +2704,14 @@
   var attachInput = document.getElementById('attachInput');
   var attachTo = null;
 
+  function addWaiting(ta, files) {
+    storeFiles(files, function (f) { return f.name; })
+      .then(function (metas) {
+        ta.waiting.push.apply(ta.waiting, metas);
+        showWaiting(ta);
+      });
+  }
+
   function attach(item, list) {
     var files = [].slice.call(list);
     return storeFiles(files, function (f) { return f.name; })
@@ -2716,6 +2725,11 @@
     return item.files.filter(function (meta) {
       return !pictured(item, meta);
     });
+  }
+
+  function clearWaiting(ta) {
+    ta.waiting = [];
+    showWaiting(ta);
   }
 
   function dropFiles(item, list) {
@@ -2735,11 +2749,11 @@
     });
   }
 
-  function keptPictures(ta, text) {
-    var kept = ta.pictures.filter(function (meta) {
-      return text.indexOf(markOf(meta.name)) >= 0;
+  function keptFiles(ta, text) {
+    var kept = ta.waiting.filter(function (meta) {
+      return !IMAGE.test(meta.type) || text.indexOf(markOf(meta.name)) >= 0;
     });
-    ta.pictures = [];
+    clearWaiting(ta);
     return kept;
   }
 
@@ -2764,15 +2778,25 @@
   }
 
   function putPictures(ta, files, owned, from, to) {
-    var taken = takenBy(owned.concat(ta.pictures));
+    var taken = takenBy(owned.concat(ta.waiting));
     storeFiles(files, function (f) { return uniqueName(taken, f.name); })
       .then(function (metas) {
-        ta.pictures.push.apply(ta.pictures, metas);
+        ta.waiting.push.apply(ta.waiting, metas);
         ta.setRangeText(metas.map(function (meta) {
           return markOf(meta.name);
         }).join(''), from, to, 'end');
         ta.dispatchEvent(new Event('input'));
       });
+  }
+
+  function showWaiting(ta) {
+    ta.waitRow.textContent = '';
+    waitingChips(ta).forEach(function (meta) {
+      ta.waitRow.appendChild(makeChip(meta, function () {
+        ta.waiting.splice(ta.waiting.indexOf(meta), 1);
+        showWaiting(ta);
+      }));
+    });
   }
 
   function storeFiles(files, name) {
@@ -2784,8 +2808,13 @@
     })).then(function () { return metas; });
   }
 
-  function takePictures(ta, owned) {
-    ta.pictures = [];
+  function takeFiles(ta, owned) {
+    ta.waiting = [];
+    ta.waitRow = el('div', 'files');
+    ta.waitRow.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+    });
+    ta.parentNode.insertBefore(ta.waitRow, ta.nextSibling);
     function fileOf(entry) { return entry.getAsFile(); }
     ta.addEventListener('paste', function (e) {
       var files = picturesOf(e.clipboardData).map(fileOf);
@@ -2794,17 +2823,33 @@
       putPictures(ta, files, owned(), ta.selectionStart, ta.selectionEnd);
     });
     ta.addEventListener('dragover', function (e) {
-      if (picturesOf(e.dataTransfer).length) e.preventDefault();
+      if (carriesFiles(e)) e.preventDefault();
     });
     ta.addEventListener('drop', function (e) {
-      var files = picturesOf(e.dataTransfer).map(fileOf);
-      if (!files.length) return;
+      if (!carriesFiles(e)) return;
       e.preventDefault();
       e.stopPropagation();
       markNest(null);
+      var files = [].slice.call(e.dataTransfer.files);
+      var pictures = files.filter(function (f) { return IMAGE.test(f.type); });
       var at = document.caretPositionFromPoint(e.clientX, e.clientY).offset;
-      putPictures(ta, files, owned(), at, at);
+      if (pictures.length) putPictures(ta, pictures, owned(), at, at);
+      addWaiting(ta, files.filter(function (f) {
+        return pictures.indexOf(f) < 0;
+      }));
     });
+  }
+
+  function waitingChips(ta) {
+    return ta.waiting.filter(function (meta) {
+      return !IMAGE.test(meta.type);
+    });
+  }
+
+  function wordsOf(ta) {
+    return ta.value.trim() || waitingChips(ta).map(function (meta) {
+      return meta.name;
+    }).join(', ');
   }
 
   function carriesFiles(e) {
@@ -2817,25 +2862,29 @@
     }, card.files);
   }
 
+  function makeChip(meta, onRemove) {
+    var chip = el('span', 'file');
+    var open = textBtn('file-open');
+    open.title = meta.name;
+    open.appendChild(icon('clip'));
+    open.appendChild(el('span', 'file-name', meta.name));
+    open.appendChild(el('span', 'file-size', fmtSize(meta.size)));
+    open.addEventListener('click', function () { openFile(meta); });
+    var drop = iconBtn('×', 'Remove ' + meta.name, 'file-drop');
+    drop.addEventListener('click', onRemove);
+    chip.appendChild(open);
+    chip.appendChild(drop);
+    return chip;
+  }
+
   function makeFiles(item) {
     var row = el('div', 'files');
     item.files.forEach(function (meta, i) {
       if (pictured(item, meta)) return;
-      var chip = el('span', 'file');
-      var open = textBtn('file-open');
-      open.title = meta.name;
-      open.appendChild(icon('clip'));
-      open.appendChild(el('span', 'file-name', meta.name));
-      open.appendChild(el('span', 'file-size', fmtSize(meta.size)));
-      open.addEventListener('click', function () { openFile(meta); });
-      var drop = iconBtn('×', 'Remove ' + meta.name, 'file-drop');
-      drop.addEventListener('click', function () {
+      row.appendChild(makeChip(meta, function () {
         item.files.splice(i, 1);
         discard('File removed');
-      });
-      chip.appendChild(open);
-      chip.appendChild(drop);
-      row.appendChild(chip);
+      }));
     });
     return row;
   }
@@ -3600,7 +3649,7 @@
   var openCardId = null;
 
   notesWhat.parentNode.appendChild(whatEdit);
-  takePictures(whatEdit, function () { return find(openCardId).card.files; });
+  takeFiles(whatEdit, function () { return find(openCardId).card.files; });
   var notesFiles = el('div');
   notesWhat.parentNode.appendChild(notesFiles);
 
@@ -3626,7 +3675,6 @@
     if (!found || editingWhat) return;
     editingWhat = true;
     whatEdit.value = found.card.text;
-    whatEdit.pictures = [];
     notesWhat.style.display = 'none';
     whatEdit.classList.add('on');
     fitWhat();
@@ -3646,11 +3694,11 @@
     whatEdit.classList.remove('on');
     notesWhat.style.display = '';
     var found = openCardId ? find(openCardId) : null;
-    var text = whatEdit.value.trim();
-    if (keep && found && text && text !== found.card.text) {
+    var text = wordsOf(whatEdit);
+    var kept = keptFiles(whatEdit, text);
+    if (keep && found && text && (text !== found.card.text || kept.length)) {
       found.card.text = text;
-      found.card.files.push.apply(found.card.files,
-        keptPictures(whatEdit, text));
+      found.card.files.push.apply(found.card.files, kept);
       commit();
       return;
     }

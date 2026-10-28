@@ -86,6 +86,10 @@ The list follows the sequence of the tests in the file.
 
 - `a picture pasted in the box for a new card or note comes with it`: it pastes a picture in three boxes: for a new card, for a new note and for the text of a note. It then makes sure that each picture stays with the text when you save it. It also makes sure that Escape discards the picture.
 
+- `a file dropped in the box for a new card or note waits as a chip`: it drops a PDF in the box for a new card. It makes sure that the PDF shows as a chip under the box, and that the words in the box do not change. It also makes sure that Escape discards the file, and that **Add** puts the file on the new card. It then makes sure that the cross on a chip takes that file out, and that a box with no words gives the card the name of the file as its text. Last, it makes sure that the box for a new note does the same.
+
+- `a file dropped in an edit box comes with the text as it is`: it drops two files in the box for the text of a card in the notes window. It makes sure that a click on the cross of one chip removes that file and keeps the box open. It then makes sure that the card gets the other file and keeps its text. Last, it makes sure that the box that a double click opens on a note does the same.
+
 - `an image chip shows as a picture only while the text names it`: it makes sure that an attached picture stays a chip until the text gives its name. It also makes sure that the picture opens when you click it, and that the chip shows again when you remove the mark.
 
 - `ctrl z takes back each change and ctrl y brings it back`: it makes two changes, then makes sure that each Ctrl+Z takes back one change and that each Ctrl+Y brings one back. It also makes sure that a key press with no step left changes nothing. It then makes sure that a new change after Ctrl+Z stops Ctrl+Y.
