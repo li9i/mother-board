@@ -162,7 +162,7 @@ A card can hold a board of its own. Such a card is a board card. The top board i
 
 ## Search
 
-**search**, on the line of counts, opens a window where you type what you look for. The **/** key opens it too, and so does Ctrl+K. The line of counts stays in view when you scroll, so search is always near. Escape or a click outside closes the window.
+The **/** key opens a window where you type what you look for, and so does Ctrl+K. The hint line under the heading names the key. Escape or a click outside closes the window.
 
 - Search looks in every board at once. It looks in the text of each card and note, as the card shows it. It also looks in the names of files and boards, and in the address behind a link that shows only its words. The marks in the text, such as `**` or `- [ ]`, are not part of the search.
 - A date matches only when you type it in full, as the card shows it, such as `Oct 6`. It can also be in quotes. Then search finds the cards and notes that you wrote on that day. A part of a date, such as `oct` or `6`, does not find a card by its date.
@@ -257,7 +257,7 @@ The book holds 108 combinations of four colours. 24 of them are here, in eight f
 
 ## The head of the page
 
-The small arrow on the left side of the line of counts hides the head of the page. The line of counts is the line below the header, for example `5 to remember · 4+3 in backlog · 6 going on now · 5 accomplished`. The arrow hides the small label `mother / board`, the heading, the hint line, **Palette**, and the **Import** and **Export** buttons. **tips** does not hide. It moves onto the line of counts. **search** does not hide, because it is on the line of counts.
+The small arrow on the left side of the line of counts hides the head of the page. The line of counts is the line below the header, for example `5 to remember · 4+3 in backlog · 6 going on now · 5 accomplished`. The arrow hides the small label `mother / board`, the heading, the hint line, **Palette**, and the **Import** and **Export** buttons. **tips** does not hide. It moves onto the line of counts.
 
 The arrow points up while the head shows, and down while the head is hidden. When you click it again, the head of the page shows again. The page records your selection in `localStorage`, in the key `mother.fold.v1`.
 

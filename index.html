@@ -1406,44 +1406,8 @@
     border-radius: 2px;
   }
 
-  .seek {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 0 1 200px;
-    min-width: 90px;
-    background: transparent;
-    border: 1.5px solid var(--gray-200);
-    border-radius: 999px;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--gray-500);
-    padding: 4px 6px 4px 14px;
-    text-align: left;
-    cursor: text;
-  }
-  .seek:hover { border-color: var(--gray-500); }
-  .seek .glyph,
   .finder-in .glyph { display: flex; color: var(--gray-600); }
-  .seek svg { width: 13px; height: 13px; }
   .finder-in svg { width: 18px; height: 18px; }
-  .seek:focus-visible {
-    outline: none;
-    border-color: var(--clay);
-    color: var(--clay-d);
-  }
-  .seek kbd,
-  .finder kbd {
-    margin-left: auto;
-    font-family: var(--mono);
-    font-size: 10px;
-    line-height: 1;
-    color: var(--gray-600);
-    background: var(--gray-50);
-    border: 1px solid var(--gray-200);
-    border-radius: 4px;
-    padding: 3px 5px 2px;
-  }
   .finder {
     width: 640px;
     max-width: 100%;
@@ -1628,7 +1592,6 @@
   <div class="toolbar" id="toolbar">
     <button class="fold" id="foldBtn" type="button" aria-controls="pagehead" aria-expanded="true" aria-label="Head of the page">›</button>
     <div class="summary" id="summary"></div>
-    <button class="seek" id="seekBtn" type="button" aria-haspopup="dialog">search<kbd>/</kbd></button>
     <div class="toolpair">
       <button class="pill" id="importBtn" type="button">import</button>
       <button class="pill" id="exportBtn" type="button" aria-haspopup="true" aria-expanded="false">export</button>
@@ -4133,7 +4096,6 @@
   var findList = document.getElementById('findList');
   var findSum = document.getElementById('findSum');
   var findScope = document.getElementById('findScope');
-  var seekBtn = document.getElementById('seekBtn');
   var scopeAll = true;
   var terms = [];
   var hits = [];
@@ -4141,7 +4103,6 @@
   var hitFolds = {};
   var sought = null;
 
-  seekBtn.insertBefore(icon('seek'), seekBtn.firstChild);
   findInput.parentNode.insertBefore(icon('seek'), findInput);
 
   function clearSought() {
@@ -4498,7 +4459,6 @@
       + (end < s.length ? '...' : '');
   }
 
-  seekBtn.addEventListener('click', openFinder);
   findInput.addEventListener('input', runSearch);
   findInput.addEventListener('keydown', function (e) {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {

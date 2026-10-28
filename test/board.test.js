@@ -2398,7 +2398,7 @@ test('a search result opens its board, column and deck and rings the card',
       const toast = () => page.run('({ text: document.querySelector('
         + '"#toastMsg").textContent, back: !document.querySelector('
         + '"#backBtn").hidden })');
-      await page.run('document.querySelector("#seekBtn").click()');
+      await page.run(call(keyIn, 'body', '/'));
       await page.run(call(searchFor, 'trailer'));
       await page.run(call(keyIn, '#findInput', 'Enter'));
       await until(() => page.run('!!document.querySelector(\''
