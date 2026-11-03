@@ -352,7 +352,7 @@ test('a name in backticks shows as code on its card and in the heading',
       'Mother Board / see outer_board / inner_board');
   });
 
-function dragOnto(from, onto) {
+function dragOnto(from, onto, hover) {
   const card = (id) => document.querySelector('.card[data-id="' + id + '"]');
   const box = card(onto).getBoundingClientRect();
   const at = { bubbles: true, cancelable: true,
@@ -360,8 +360,10 @@ function dragOnto(from, onto) {
     dataTransfer: new DataTransfer() };
   card(from).dispatchEvent(new DragEvent('dragstart', at));
   card(onto).dispatchEvent(new DragEvent('dragover', at));
-  card(onto).dispatchEvent(new DragEvent('drop', at));
+  const ring = card(onto).dataset.nest;
+  if (!hover) card(onto).dispatchEvent(new DragEvent('drop', at));
   card(from).dispatchEvent(new DragEvent('dragend', at));
+  return ring;
 }
 
 function choices() {
@@ -449,6 +451,24 @@ test('a drop on the head of a deck adds to it without asking', async () => {
   assert.deepStrictEqual(seen.saved.cols.backlog[0].cards.map((c) => c.id),
     ['p', 'k']);
 });
+
+test('the ring says drop for options on a card and add to deck on a head',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [], backlog: [
+          { id: 'a', text: 'card a', created: 1 },
+          { id: 'b', text: 'card b', created: 1 },
+          { id: 'h', text: 'head', created: 1,
+            cards: [{ id: 'k', text: 'in the deck', created: 1 }] }] } });
+      await page.go();
+      return { card: await page.run(call(dragOnto, 'a', 'b', true)),
+        head: await page.run(call(dragOnto, 'a', 'h', true)) };
+    });
+
+    assert.deepStrictEqual(seen,
+      { card: 'drop for options', head: 'add to deck' });
+  });
 
 test('a place button shows only where pin and low rules let a card land',
   async () => {

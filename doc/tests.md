@@ -32,6 +32,8 @@ The list follows the sequence of the tests in the file.
 
 - `a drop on the head of a deck adds to it without asking`: it makes sure that, when you drop a card on the head of a deck, the card goes to the top of the deck. It also makes sure that no menu opens.
 
+- `the ring says drop for options on a card and add to deck on a head`: it drags a card over the middle of a different card, and then over the middle of the head of a deck, and does not drop it. It makes sure that the ring says **drop for options** over the card and **add to deck** over the head.
+
 - `a place button shows only where pin and low rules let a card land`: it makes sure that the two Place buttons show only where pins and levels let the card go directly above or below.
 
 - `a card added as a note goes last and loses its pin`: it drops a pinned card on a card that has one note, and presses **Add as a note to this card**. It makes sure that the dragged card leaves the column and becomes the second note of the other card, with no pin.
