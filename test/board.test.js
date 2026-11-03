@@ -383,13 +383,16 @@ function call(fn, ...args) {
 }
 
 const DECK = 'Create deck';
+const NOTE = 'Add as a note to this card';
+const HAS_NOTES = 'The card you drag has notes, and a note cannot hold notes.';
 const ABOVE = 'Place above this card';
 const BELOW = 'Place below this card';
 
 test('a drop on the middle of a card asks where the card goes', async () => {
   const seen = await inPage(async (page) => {
     const out = {};
-    const answers = { deck: DECK, up: ABOVE, down: BELOW, escape: null };
+    const answers = { deck: DECK, note: NOTE, up: ABOVE, down: BELOW,
+      escape: null };
     for (const [name, answer] of Object.entries(answers)) {
       await seed(page, STORE, { cols: { remember: [], now: [],
         accomplished: [], backlog: ['a', 'b', 'c'].map(
@@ -412,13 +415,16 @@ test('a drop on the middle of a card asks where the card goes', async () => {
 
   const ids = (list) => list.map((c) => c.id);
   Object.values(seen).forEach((one) => {
-    assert.deepStrictEqual(one.asked, [DECK, ABOVE, BELOW]);
+    assert.deepStrictEqual(one.asked, [DECK, NOTE, ABOVE, BELOW]);
     assert.deepStrictEqual(ids(one.before.cols.backlog), ['a', 'b', 'c']);
     assert.deepStrictEqual(one.left, []);
   });
   const deck = seen.deck.after.cols.backlog;
   assert.deepStrictEqual(ids(deck), ['a', 'b']);
   assert.deepStrictEqual(ids(deck[0].cards), ['c']);
+  const noted = seen.note.after.cols.backlog;
+  assert.deepStrictEqual(ids(noted), ['a', 'b']);
+  assert.deepStrictEqual(ids(noted[0].notes), ['c']);
   assert.deepStrictEqual(ids(seen.up.after.cols.backlog), ['c', 'a', 'b']);
   assert.deepStrictEqual(ids(seen.down.after.cols.backlog), ['a', 'c', 'b']);
   assert.deepStrictEqual(ids(seen.escape.after.cols.backlog),
@@ -474,11 +480,52 @@ test('a place button shows only where pin and low rules let a card land',
       return out;
     });
 
-    assert.deepStrictEqual(seen.ontoPinned, [DECK, BELOW]);
+    assert.deepStrictEqual(seen.ontoPinned, [DECK, NOTE, BELOW]);
     assert.deepStrictEqual(seen.pressed, ['P', 'b', 'a']);
-    assert.deepStrictEqual(seen.ontoLow, [DECK, ABOVE]);
-    assert.deepStrictEqual(seen.pinnedOntoNormal, [DECK]);
-    assert.deepStrictEqual(seen.lowOntoNormal, [DECK]);
+    assert.deepStrictEqual(seen.ontoLow, [DECK, NOTE, ABOVE]);
+    assert.deepStrictEqual(seen.pinnedOntoNormal, [DECK, NOTE]);
+    assert.deepStrictEqual(seen.lowOntoNormal, [DECK, NOTE]);
+  });
+
+function shutRows() {
+  return Array.from(document.querySelectorAll('[role="menu"] button'))
+    .filter((b) => b.disabled).map((b) => b.textContent.trim());
+}
+
+test('a card added as a note goes last and loses its pin', async () => {
+  const saved = await inPage(async (page) => {
+    await seed(page, STORE, oneNote([
+      { id: 'c', text: 'card c', created: 1, pinned: true }]));
+    await page.go();
+    await page.run(call(dragOnto, 'c', 'a'));
+    await page.run(call(choose, NOTE));
+    return stored(page, STORE);
+  });
+
+  const [host] = saved.cols.backlog;
+  assert.deepStrictEqual(saved.cols.backlog.map((c) => c.id), ['a']);
+  assert.deepStrictEqual(host.notes.map((n) => n.id), ['n', 'c']);
+  assert.strictEqual(host.notes[1].pinned, false);
+});
+
+test('a card with notes does not become a note and the menu says why',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, oneNote([
+        { id: 'b', text: 'card b', created: 1,
+          notes: [{ id: 'm', text: 'note m', created: 1 }] }]));
+      await page.go();
+      await page.run(call(dragOnto, 'b', 'a'));
+      const before = await stored(page, STORE);
+      const rows = await page.run(call(menuRows));
+      const shut = await page.run(call(shutRows));
+      await page.run(call(choose, NOTE));
+      return { before, rows, shut, after: await stored(page, STORE) };
+    });
+
+    assert.deepStrictEqual(seen.rows.slice(0, 3), [DECK, NOTE, HAS_NOTES]);
+    assert.deepStrictEqual(seen.shut, [NOTE]);
+    assert.deepStrictEqual(seen.after, seen.before);
   });
 
 function dropFiles(selector, files) {

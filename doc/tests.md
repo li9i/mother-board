@@ -28,11 +28,15 @@ The list follows the sequence of the tests in the file.
 
 - `a name in backticks shows as code on its card and in the heading`: it makes sure that a name in backticks shows as code on its board card and in the heading.
 
-- `a drop on the middle of a card asks where the card goes`: it makes sure that, when you drop a card on the middle of a different card, the menu shows all three buttons. It also makes sure that each button moves the card correctly, and that Escape keeps the card at its initial position.
+- `a drop on the middle of a card asks where the card goes`: it makes sure that, when you drop a card on the middle of a different card, the menu shows all four buttons. It also makes sure that each button moves the card correctly, and that Escape keeps the card at its initial position.
 
 - `a drop on the head of a deck adds to it without asking`: it makes sure that, when you drop a card on the head of a deck, the card goes to the top of the deck. It also makes sure that no menu opens.
 
 - `a place button shows only where pin and low rules let a card land`: it makes sure that the two Place buttons show only where pins and levels let the card go directly above or below.
+
+- `a card added as a note goes last and loses its pin`: it drops a pinned card on a card that has one note, and presses **Add as a note to this card**. It makes sure that the dragged card leaves the column and becomes the second note of the other card, with no pin.
+
+- `a card with notes does not become a note and the menu says why`: it drops a card that has a note on a different card. It makes sure that **Add as a note to this card** is grey, that the line under it gives the reason, and that a press on it does not change the board.
 
 - `a file dropped on a card or a note shows as a chip`: it makes sure that a file that you drop on a card or a note shows as a chip with its name and file size. It also makes sure that a board card shows its files only in its notes window.
 

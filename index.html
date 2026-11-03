@@ -1208,6 +1208,11 @@
   }
   .card-menu .pair button:last-child { flex-direction: row-reverse; }
   .card-menu button:hover { background: var(--gray-50); }
+  .card-menu button:disabled {
+    background: transparent;
+    color: var(--gray-500);
+    cursor: default;
+  }
   .card-menu .delbtn { color: var(--red); }
   .card-menu button:focus-visible { outline: 2px solid var(--clay); outline-offset: -2px; }
   .card-menu .glyph {
@@ -2407,8 +2412,14 @@
           return to === want && { icon: icon, title: title,
             onClick: function () { dropCard(id, c.key, to); } };
         };
+        var held = find(id).card.notes.length > 0;
         openMenu(null, onto, [
           { icon: 'deck', title: 'Create deck', onClick: deck },
+          { icon: 'note', title: 'Add as a note to this card',
+            disabled: held,
+            cap: held && 'The card you drag has notes,'
+              + ' and a note cannot hold notes.',
+            onClick: function () { joinNotes(id, host); } },
           side('above', 'Place above this card', box.top, at),
           side('below', 'Place below this card', box.bottom, at + 1)
         ].filter(Boolean));
@@ -2587,13 +2598,23 @@
     var found = find(id);
     var host = find(deckId);
     if (!found || !host || host.deck || id === deckId || found.card.cards.length) return;
+    var card = pluck(found);
+    var kids = host.card.cards;
+    var at = beforeId ? indexOfId(kids, beforeId) : -1;
+    kids.splice(at < 0 ? kids.length : at, 0, card);
+    commit();
+  }
+
+  function joinNotes(id, hostId) {
+    find(hostId).card.notes.push(pluck(find(id)));
+    commit();
+  }
+
+  function pluck(found) {
     found.list.splice(found.index, 1);
     found.card.pinned = false;
     found.card.low = false;
-    var kids = host.card.cards;
-    var at = beforeId ? indexOfId(kids, beforeId) : -1;
-    kids.splice(at < 0 ? kids.length : at, 0, found.card);
-    commit();
+    return found.card;
   }
 
   function moveNote(id, at) {
@@ -2710,6 +2731,7 @@
     row.setAttribute('role', 'menuitem');
     row.appendChild(icon(a.icon));
     row.appendChild(document.createTextNode(a.title));
+    row.disabled = !!a.disabled;
     row.addEventListener('click', function (e) {
       e.stopPropagation();
       closeMenu();
@@ -2761,7 +2783,7 @@
   menu.addEventListener('keydown', function (e) {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
     e.preventDefault();
-    var rows = [].slice.call(menu.querySelectorAll('button'));
+    var rows = [].slice.call(menu.querySelectorAll('button:not(:disabled)'));
     var at = rows.indexOf(document.activeElement);
     rows[(at + (e.key === 'ArrowDown' ? 1 : rows.length - 1)) % rows.length].focus();
   });
