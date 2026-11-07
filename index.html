@@ -354,6 +354,89 @@
     gap: 16px;
     align-items: start;
   }
+  .board.shelf {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(240px, 1fr);
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .add-col {
+    min-height: 200px;
+    width: 240px;
+    background: transparent;
+    border: 1.5px dashed var(--gray-200);
+    border-radius: 12px;
+    color: var(--gray-600);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .add-col:hover,
+  .add-col:focus-visible {
+    outline: none;
+    border-color: var(--clay);
+    color: var(--clay-d);
+  }
+  .col.dragging { opacity: 0.5; }
+  .board.shelf .col-head { cursor: grab; }
+  .board.shelf .col-head h2 { cursor: text; }
+  .col-name {
+    min-width: 0;
+    flex: 1;
+    font-family: var(--serif);
+    font-size: 17px;
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    padding: 0 4px;
+  }
+  .colcolor,
+  .coldel {
+    display: flex;
+    flex: none;
+    align-self: center;
+    padding: 2px;
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--head, var(--slate));
+  }
+  .colcolor::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--rule);
+    box-shadow: inset 0 0 0 1px rgba(20, 20, 19, 0.2);
+  }
+  .coldel svg { width: 14px; height: 14px; }
+  .colcolor:hover,
+  .coldel:hover { background: rgba(20, 20, 19, 0.08); }
+  .col-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0 14px 10px;
+  }
+  .swatch {
+    width: 18px;
+    height: 18px;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--slate); }
+  .index-link {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+  .index-link:hover { text-decoration: underline; }
+  #homeSwitch { justify-content: center; }
   .col-divider {
     align-self: stretch;
     width: 1px;
@@ -1591,6 +1674,10 @@
         <div class="hintline">drag cards between columns <span class="toolsep">·</span> double-click a card to edit <span class="toolsep">·</span> hover for more options <span class="toolsep">·</span> ctrl-z/y to undo/redo <span class="toolsep">·</span> / to search</div>
       </div>
       <div class="tools" id="tools">
+        <div class="scope" id="homeSwitch">
+          <button type="button" data-home="board" aria-pressed="true">board</button>
+          <button type="button" data-home="shelf" aria-pressed="false">shelf</button>
+        </div>
         <button class="pill" id="tipsBtn" type="button" aria-haspopup="dialog">tips</button>
         <span class="palette-wrap">
           <button class="pill" id="paletteBtn" aria-expanded="false" aria-haspopup="true">palette</button>
@@ -1686,6 +1773,15 @@
   var PAL_COLUMNS = COLUMNS.filter(function (c) { return c.palette; });
 
   var STORE = 'mother.board.v1';
+  var SHELF_STORE = 'mother.shelf.v1';
+  var HOME_KEY = 'mother.home.v1';
+  var HOMES = {
+    board: { store: STORE, name: 'Mother Board' },
+    shelf: { store: SHELF_STORE, name: 'Mother Shelf' }
+  };
+  var SHELF_MARK = 'mise';
+  var SHELF_PROMPT = 'What goes here?';
+  var NEW_COLUMN = 'New column';
   var PAL_KEY = 'personal.palette.v1';
   var TURN_KEY = 'personal.palturn.v1';
   var BURST_KEY = 'mother.burst.v1';
@@ -1715,7 +1811,6 @@
   var SHOWN = /^(image\/(?!svg)|audio\/|video\/|application\/pdf$|text\/plain$)/;
   var IMAGE = /^image\//;
   var PICTURE = /!\[\[([^\[\]\n]+)\]\]/;
-  var MOTHER = 'Mother Board';
   var GMAIL = 'https://mail.google.com/mail/?view=cm&fs=1';
   var PICTURES = new RegExp(PICTURE.source, 'g');
   var SEEK_ROOM = 110;
@@ -1753,6 +1848,7 @@
     bar: 'M6 12h12',
     cross: 'M18 6L6 18 M6 6l12 12',
     board: 'M3.5 4.5h17v15h-17Z M8 4.5v15 M12 4.5v15 M16 4.5v15',
+    shelf: 'M3.5 4.5h17v15h-17Z M3.5 12h17 M8 4.5v7.5 M14 12v7.5',
     chev: 'M9 6l6 6-6 6',
     grip: 'M9.5 5h.01 M9.5 12h.01 M9.5 19h.01 M14.5 5h.01 M14.5 12h.01 '
        + 'M14.5 19h.01',
@@ -1819,8 +1915,8 @@
     return n + ' ' + word + (n === 1 ? '' : 's');
   }
 
-  function colOf(key) {
-    return pick(COLUMNS, function (c) { return c.key === key; });
+  function colOf(key, board) {
+    return pick(colsOf(board || here()), function (c) { return c.key === key; });
   }
 
   function uid() {
@@ -1932,7 +2028,8 @@
       fileStore('readwrite', function (store) {
         var all = store.getAllKeys();
         all.onsuccess = function () {
-          var held = lsGet(STORE) + pendingUndos(locks.held);
+          var held = lsGet(STORE) + lsGet(SHELF_STORE)
+            + pendingUndos(locks.held);
           all.result.forEach(function (id) {
             if (held.indexOf(id) < 0) store.delete(id);
           });
@@ -1963,10 +2060,12 @@
   }
 
   carry();
+  var home = lsGet(HOME_KEY) === 'shelf' ? 'shelf' : 'board';
   var state = load();
   var last = JSON.stringify(state);
   var undos = [];
   var redos = [];
+  var stacks = {};
   var path = [];
   var drag = null;
   var lift = null;
@@ -1978,10 +2077,14 @@
     return { cols: cols };
   }
 
+  function blankShelf() {
+    return { cols: {}, shelf: [] };
+  }
+
   function load() {
-    var fresh = blank();
+    var fresh = home === 'shelf' ? blankShelf() : blank();
     try {
-      var raw = lsGet(STORE);
+      var raw = lsGet(HOMES[home].store);
       if (!raw) return fresh;
       var parsed = JSON.parse(raw);
       if (!parsed || !parsed.cols) return fresh;
@@ -1995,6 +2098,7 @@
   }
 
   function normalizeBoard(parsed) {
+    if (parsed.shelf) return normalizeShelf(parsed);
     var fresh = blank();
     var cols = parsed.cols;
     if (Array.isArray(cols.later) && !Array.isArray(cols.accomplished)) {
@@ -2009,7 +2113,18 @@
     fresh.cols.backlog = fresh.cols.backlog.concat(normalize(cols[GONE_KEY]));
     keep(fresh.cols, cols, KEYS.concat(OLD_COLS));
     keep(fresh, parsed, ['cols']);
-    orderGroups(fresh.cols);
+    orderGroups(fresh);
+    return fresh;
+  }
+
+  function normalizeShelf(parsed) {
+    var fresh = blankShelf();
+    parsed.shelf.forEach(function (c) {
+      fresh.shelf.push(c);
+      fresh.cols[c.key] = normalize(parsed.cols[c.key]);
+    });
+    keep(fresh, parsed, ['cols', 'shelf']);
+    orderGroups(fresh);
     return fresh;
   }
 
@@ -2047,8 +2162,9 @@
       low: false, notes: [], cards: [], files: files };
   }
 
-  function orderGroups(cols) {
-    KEYS.forEach(function (k) {
+  function orderGroups(board) {
+    var cols = board.cols;
+    keysOf(board).forEach(function (k) {
       var list = cols[k];
       cols[k] = list.filter(function (c) { return c.pinned; })
         .concat(list.filter(function (c) { return !c.pinned && !c.low; }))
@@ -2061,7 +2177,7 @@
   }
 
   function boardSize(board) {
-    return KEYS.reduce(function (n, k) {
+    return keysOf(board).reduce(function (n, k) {
       return n + sizeOf(board.cols[k]);
     }, 0);
   }
@@ -2083,7 +2199,7 @@
 
   function keepBoard(board) {
     last = board;
-    lsSet(STORE, board);
+    lsSet(HOMES[home].store, board);
     holdFiles();
   }
 
@@ -2097,7 +2213,10 @@
 
   function holdFiles() {
     var held = {};
-    undos.concat(redos).forEach(function (step) {
+    Object.keys(stacks).filter(function (h) { return h !== home; })
+      .reduce(function (all, h) {
+        return all.concat(stacks[h].undos, stacks[h].redos);
+      }, undos.concat(redos)).forEach(function (step) {
       step.ids.forEach(function (id) { held[id] = true; });
     });
     idsOf(last).forEach(function (id) { delete held[id]; });
@@ -2133,7 +2252,7 @@
   }
 
   function cardsOf(board) {
-    return KEYS.reduce(function (out, k) {
+    return keysOf(board).reduce(function (out, k) {
       return board.cols[k].reduce(function (all, c) {
         return all.concat(c, c.cards, c.board ? cardsOf(c.board) : []);
       }, out);
@@ -2149,13 +2268,13 @@
   }
 
   function commit() {
-    orderGroups(here().cols);
+    orderGroups(here());
     save();
     render();
   }
 
   function steps(ids) {
-    var out = [{ name: MOTHER, board: state }];
+    var out = [{ name: HOMES[home].name, board: state }];
     ids.every(function (id) {
       var found = find(id, out[out.length - 1].board);
       var card = found && !found.deck && found.card.board ? found.card : null;
@@ -2183,15 +2302,16 @@
 
   function find(id, board) {
     var cols = (board || here()).cols;
-    for (var i = 0; i < KEYS.length; i++) {
-      var list = cols[KEYS[i]];
+    var keys = keysOf(board || here());
+    for (var i = 0; i < keys.length; i++) {
+      var list = cols[keys[i]];
       for (var j = 0; j < list.length; j++) {
         if (list[j].id === id) {
-          return { col: KEYS[i], list: list, index: j, card: list[j], deck: null };
+          return { col: keys[i], list: list, index: j, card: list[j], deck: null };
         }
         var at = indexOfId(list[j].cards, id);
         if (at >= 0) {
-          return { col: KEYS[i], list: list[j].cards, index: at,
+          return { col: keys[i], list: list[j].cards, index: at,
             card: list[j].cards[at], deck: list[j] };
         }
       }
@@ -2334,21 +2454,39 @@
   }
 
   function closeClearAsks() {
-    KEYS.forEach(function (k) {
+    Object.keys(views).forEach(function (k) {
       if (views[k].clear) views[k].clear.closeAsk();
     });
   }
 
   var board = document.getElementById('board');
   var views = {};
+  var built = null;
 
-  COLUMNS.forEach(function (c) {
+  function buildColumns() {
+    var shelf = here().shelf;
+    built = JSON.stringify(colsOf(here()));
+    board.textContent = '';
+    board.classList.toggle('shelf', !!shelf);
+    views = {};
+    colsOf(here()).forEach(function (c) {
+      if (shelf) tone[c.key] = toneOf(c.color);
+      makeColumn(c, shelf);
+      paint(views[c.key].el, c.key);
+    });
+    if (!shelf) return;
+    var add = textBtn('add-col', '+ column');
+    add.addEventListener('click', addColumn);
+    board.appendChild(add);
+  }
+
+  function makeColumn(c, shelf) {
     var column = el('section', 'col');
     column.dataset.col = c.key;
 
     var head = el('div', 'col-head');
     var fold = textBtn('colfold');
-    fold.appendChild(icon(c.mark));
+    fold.appendChild(icon(c.mark || SHELF_MARK));
     fold.addEventListener('click', function () {
       var board = here();
       var was = board.folded || [];
@@ -2359,23 +2497,40 @@
       render();
     });
     head.appendChild(fold);
-    head.appendChild(el('h2', null, c.label));
+    var name = el('h2', null, c.label);
+    head.appendChild(name);
     var count = el('span', 'count');
     head.appendChild(count);
+    var swatches = shelf ? makeSwatches(c) : null;
+    if (shelf) {
+      name.addEventListener('click', function () { renameColumn(c, name); });
+      var tint = textBtn('colcolor');
+      tint.setAttribute('aria-label', 'Colour of ' + c.label);
+      tint.addEventListener('click', function () {
+        swatches.hidden = !swatches.hidden;
+      });
+      var bin = textBtn('coldel');
+      bin.setAttribute('aria-label', 'Remove ' + c.label);
+      bin.appendChild(icon('bin'));
+      bin.addEventListener('click', function () { removeColumn(c.key); });
+      head.appendChild(tint);
+      head.appendChild(bin);
+      wireColumnDrag(head, column, c.key);
+    }
 
     var addWrap = el('div', 'col-add');
     var body = el('div', 'col-body');
 
     makeComposer(addWrap, {
       add: '+ add to ' + c.label.toLowerCase(),
-      placeholder: c.prompt,
+      placeholder: c.prompt || SHELF_PROMPT,
       onAdd: function (text, files) {
         here().cols[c.key].unshift(newItem(text, files));
         commit();
       }
     });
 
-    var clear = c.clearable ? makeClearRow(c) : null;
+    var clear = c.clearable || shelf ? makeClearRow(c) : null;
     var foot = null;
     if (clear) {
       foot = el('div', 'col-foot');
@@ -2383,6 +2538,7 @@
     }
 
     column.appendChild(head);
+    if (swatches) column.appendChild(swatches);
     column.appendChild(addWrap);
     column.appendChild(body);
     if (foot) column.appendChild(foot);
@@ -2428,7 +2584,107 @@
 
     views[c.key] = { el: column, body: body, count: count, clear: clear,
       fold: fold };
-  });
+  }
+
+  function addColumn() {
+    var shelf = here().shelf;
+    var colors = swatchColors();
+    var c = { key: uid(), label: NEW_COLUMN,
+      color: colors[shelf.length % colors.length] };
+    shelf.push(c);
+    here().cols[c.key] = [];
+    commit();
+    renameColumn(c, views[c.key].el.querySelector('h2'));
+  }
+
+  function renameColumn(c, name) {
+    var input = el('input', 'col-name');
+    input.value = c.label;
+    name.replaceWith(input);
+    input.focus();
+    input.select();
+    var done = false;
+    function finish(keep) {
+      if (done) return;
+      done = true;
+      var label = input.value.trim();
+      if (keep && label && label !== c.label) {
+        c.label = label;
+        commit();
+      } else input.replaceWith(name);
+    }
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') finish(true);
+      if (e.key === 'Escape') finish(false);
+    });
+    input.addEventListener('blur', function () { finish(true); });
+  }
+
+  function removeColumn(key) {
+    var board = here();
+    var c = colOf(key);
+    board.shelf.splice(board.shelf.indexOf(c), 1);
+    delete board.cols[key];
+    discard(c.label + ' removed');
+  }
+
+  function swatchColors() {
+    return PALETTES.reduce(function (out, p) {
+      return out.concat(p.colors.filter(function (hex) {
+        return out.indexOf(hex) < 0;
+      }));
+    }, []);
+  }
+
+  function makeSwatches(c) {
+    var row = el('div', 'col-swatches');
+    row.hidden = true;
+    swatchColors().forEach(function (hex) {
+      var b = textBtn('swatch');
+      b.dataset.color = hex;
+      b.style.background = hex;
+      b.setAttribute('aria-label', hex);
+      b.setAttribute('aria-pressed', hex === c.color ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        c.color = hex;
+        commit();
+      });
+      row.appendChild(b);
+    });
+    return row;
+  }
+
+  function wireColumnDrag(head, column, key) {
+    head.draggable = true;
+    head.addEventListener('dragstart', function (e) {
+      if (e.target !== head) return;
+      drag = { id: key, level: 'column' };
+      column.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', key);
+    });
+    head.addEventListener('dragend', function () {
+      drag = null;
+      column.classList.remove('dragging');
+    });
+    column.addEventListener('dragover', function (e) {
+      if (!dragged('column')) return;
+      e.preventDefault();
+    });
+    column.addEventListener('drop', function (e) {
+      var id = dragged('column');
+      if (!id || id === key) return;
+      e.preventDefault();
+      var shelf = here().shelf;
+      var moving = colOf(id);
+      shelf.splice(shelf.indexOf(moving), 1);
+      var box = column.getBoundingClientRect();
+      var at = shelf.indexOf(colOf(key));
+      shelf.splice(e.clientX > box.left + box.width / 2 ? at + 1 : at, 0,
+        moving);
+      commit();
+    });
+  }
 
   function wireDrag(card, id, level) {
     function moving() {
@@ -3393,22 +3649,27 @@
     ];
     if (!deck) {
       if (!card.board) {
+        buttons.unshift({ icon: 'shelf', title: 'Turn into a shelf',
+          onClick: function () { turnIntoBoard(card.id, true); } });
         buttons.unshift({ icon: 'board', title: 'Turn into a board',
           onClick: function () { turnIntoBoard(card.id); } });
       }
       buttons.unshift({ icon: 'pin', title: card.pinned ? 'Unpin' : 'Pin to top',
         onClick: function () { togglePin(card.id); } });
-      var at = KEYS.indexOf(col.key);
+      var keys = keysOf(here());
+      var at = keys.indexOf(col.key);
       var moves = [];
       if (at > 0) {
         moves.push({ icon: 'left', title: 'Move left',
-          onClick: function () { moveCard(card.id, KEYS[at - 1], 0); } });
+          onClick: function () { moveCard(card.id, keys[at - 1], 0); } });
       }
-      if (at < KEYS.length - 1) {
+      if (at < keys.length - 1) {
         moves.push({ icon: 'right', title: 'Move right',
-          onClick: function () { moveCard(card.id, KEYS[at + 1], 0); } });
+          onClick: function () { moveCard(card.id, keys[at + 1], 0); } });
       }
-      buttons.unshift(moves.length > 1 ? { pair: moves } : moves[0]);
+      if (moves.length) {
+        buttons.unshift(moves.length > 1 ? { pair: moves } : moves[0]);
+      }
     }
     buttons.push({ cls: 'delbtn', icon: 'bin', title: 'Delete',
       onClick: function () { removeCard(card.id); } });
@@ -3442,6 +3703,7 @@
   }
 
   function boardDone(board) {
+    if (board.shelf) return plural(boardSize(board), 'card');
     if (!boardSize(board)) return 'empty board';
     var all = ['backlog', 'now', 'accomplished'].reduce(function (n, k) {
       return n + sizeOf(board.cols[k]);
@@ -3454,22 +3716,23 @@
     var colors = turned(paletteOf(board.palette).colors, board.turn || 0);
     var empty = !boardSize(board);
     if (empty) band.classList.add('hollow');
-    COLUMNS.forEach(function (c) {
+    colsOf(board).forEach(function (c) {
       var n = sizeOf(board.cols[c.key]);
       if (!n && !empty) return;
       var part = el('span');
       part.style.flexGrow = empty ? 1 : n;
-      part.style.background =
-        c.palette ? colors[PAL_COLUMNS.indexOf(c)] : c.rule;
+      part.style.background = c.color
+        || (c.palette ? colors[PAL_COLUMNS.indexOf(c)] : c.rule);
       band.appendChild(part);
     });
     return band;
   }
 
   function makeBoardTab(card) {
-    var tab = textBtn('board-tab', 'board');
-    tab.setAttribute('aria-label', 'Open the board ' + cardTitle(card));
-    tab.insertBefore(icon('board'), tab.firstChild);
+    var kind = card.board.shelf ? 'shelf' : 'board';
+    var tab = textBtn('board-tab', kind);
+    tab.setAttribute('aria-label', 'Open the ' + kind + ' ' + cardTitle(card));
+    tab.insertBefore(icon(kind), tab.firstChild);
     tab.appendChild(icon('chev'));
     tab.addEventListener('click', function () {
       enter(path.concat(card.id));
@@ -3477,10 +3740,10 @@
     return tab;
   }
 
-  function turnIntoBoard(id) {
+  function turnIntoBoard(id, shelf) {
     var card = find(id).card;
-    card.board = blank();
-    card.board.cols.backlog = card.cards;
+    card.board = shelf ? blankShelf() : blank();
+    if (!shelf) card.board.cols.backlog = card.cards;
     card.board.palette = currentPal;
     card.board.turn = palTurn;
     card.cards = [];
@@ -4394,7 +4657,7 @@
   function searchIndex() {
     var out = [];
     (function walk(home, at) {
-      KEYS.forEach(function (k) {
+      keysOf(home).forEach(function (k) {
         home.cols[k].forEach(function (c) {
           seekEntries(out, c, { home: home, path: at, col: k, head: null });
           c.cards.forEach(function (d) {
@@ -4402,7 +4665,7 @@
           });
         });
       });
-      KEYS.forEach(function (k) {
+      keysOf(home).forEach(function (k) {
         home.cols[k].forEach(function (c) {
           if (c.board) walk(c.board, at.concat(c.id));
         });
@@ -4412,7 +4675,7 @@
   }
 
   function seekEntries(out, item, where) {
-    var col = colOf(where.col).label
+    var col = colOf(where.col, where.home).label
       + ((where.home.folded || []).indexOf(where.col) >= 0 ? ' (folded)' : '');
     var owner = col + ' · on ' + cardTitle(item);
     var seen = shownText(item.text);
@@ -4424,7 +4687,7 @@
       : (item.pinned ? ' · pinned' : '') + (item.low ? ' · low' : '');
     out.push(seekHit(where, item, {
       glyph: item.board ? 'board' : where.head ? 'deck'
-        : colOf(where.col).mark,
+        : colOf(where.col, where.home).mark || SHELF_MARK,
       words: seen.words, links: seen.links, time: item.created,
       where: kind + ' · ' + col + more }));
     item.notes.forEach(function (note) {
@@ -4526,7 +4789,8 @@
   function render() {
     closeMenu();
     renderTrail();
-    COLUMNS.forEach(function (c) {
+    if (built !== JSON.stringify(colsOf(here()))) buildColumns();
+    colsOf(here()).forEach(function (c) {
       var list = here().cols[c.key];
       var view = views[c.key];
       fillBody(view.body, list, 'nothing here', function (card) {
@@ -4556,10 +4820,18 @@
   function renderSummary() {
     var out = document.getElementById('summary');
     out.textContent = '';
-    COLUMNS.forEach(function (c, i) {
+    var shelf = here().shelf;
+    colsOf(here()).forEach(function (c, i) {
       if (i) out.appendChild(el('span', 'dot', '·'));
-      out.appendChild(el('b', null, countOf(here().cols[c.key])));
-      out.appendChild(document.createTextNode(' ' + c.tally));
+      var part = shelf ? textBtn('index-link') : out;
+      part.appendChild(el('b', null, countOf(here().cols[c.key])));
+      part.appendChild(document.createTextNode(' ' + (c.tally || c.label)));
+      if (!shelf) return;
+      part.addEventListener('click', function () {
+        views[c.key].el.scrollIntoView({ behavior: 'smooth',
+          block: 'nearest', inline: 'start' });
+      });
+      out.appendChild(part);
     });
   }
 
@@ -4580,6 +4852,14 @@
     document.title = all[all.length - 1].name;
   }
 
+  function colsOf(board) {
+    return board.shelf || COLUMNS;
+  }
+
+  function keysOf(board) {
+    return colsOf(board).map(function (c) { return c.key; });
+  }
+
   function cardTitle(card) {
     var line = '';
     card.text.split('\n').some(function (l) {
@@ -4594,7 +4874,7 @@
   var CRCS = crcTable();
 
   function boardHolders(board) {
-    return KEYS.reduce(function (out, k) {
+    return keysOf(board).reduce(function (out, k) {
       return board.cols[k].reduce(function (all, c) {
         return all.concat(holdersOf(c));
       }, out);
@@ -4852,7 +5132,7 @@
       return;
     }
     var card = reid(arriving[0]);
-    var col = colOf(parsed.col) || colOf('backlog');
+    var col = colOf(parsed.col) || colOf('backlog') || colsOf(here())[0];
     unpack(blobs, entries).then(function () {
       here().cols[col.key].push(card);
       commit();
@@ -4885,7 +5165,7 @@
   }
 
   function onBoard(card) {
-    return KEYS.some(function (k) {
+    return keysOf(here()).some(function (k) {
       return here().cols[k].some(function (c) {
         return [c].concat(c.cards).some(function (one) {
           return one.text === card.text && one.created === card.created;
@@ -5125,6 +5405,11 @@
     });
   }
 
+  function toneOf(hex) {
+    return { fill: tintOf(hex), rule: hex, drop: shadeOf(hex),
+      ink: inkOf(hex) };
+  }
+
   function turned(list, n) {
     return n % 2 ? [list[1], list[0]].concat(list.slice(2)) : list.slice();
   }
@@ -5147,12 +5432,11 @@
     palTurn = ((turn || 0) % 2 + 2) % 2;
     var colors = colorsOf(p);
     PAL_COLUMNS.forEach(function (c, i) {
-      tone[c.key] = {
-        fill: tintOf(colors[i]), rule: colors[i], drop: shadeOf(colors[i]),
-        ink: inkOf(colors[i])
-      };
+      tone[c.key] = toneOf(colors[i]);
     });
-    KEYS.forEach(function (k) { paint(views[k].el, k); });
+    if (!here().shelf && built === JSON.stringify(COLUMNS)) {
+      KEYS.forEach(function (k) { paint(views[k].el, k); });
+    }
     redrawNotes();
     setFavicon(colors);
   }
@@ -5300,8 +5584,29 @@
 
   function show() {
     applyPalette(here().palette, here().turn);
+    palBtn.parentNode.hidden = !!here().shelf;
+    homeSwitch.querySelectorAll('button').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.dataset.home === home ? 'true' : 'false');
+    });
     render();
   }
+
+  var homeSwitch = document.getElementById('homeSwitch');
+  homeSwitch.addEventListener('click', function (e) {
+    var to = e.target.dataset.home;
+    if (!to || to === home) return;
+    stacks[home] = { undos: undos, redos: redos };
+    home = to;
+    lsSet(HOME_KEY, home);
+    state = load();
+    last = JSON.stringify(state);
+    undos = stacks[home] ? stacks[home].undos : [];
+    redos = stacks[home] ? stacks[home].redos : [];
+    hideToast();
+    path = [];
+    enter(path);
+    show();
+  });
 
   var toolbar = document.getElementById('toolbar');
   var markStuck = function () {
@@ -5333,7 +5638,7 @@
   setFold(readCarried(FOLD_KEY, OLD_FOLD_KEYS) === '1');
 
   window.addEventListener('storage', function (e) {
-    if (e.key !== STORE) return;
+    if (e.key !== HOMES[home].store) return;
     state = load();
     last = JSON.stringify(state);
     undos = [];

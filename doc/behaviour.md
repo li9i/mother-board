@@ -146,7 +146,7 @@ A deck is a card with cards of its own under it. The card on top is the head. It
 
 A card can hold a board of its own. Such a card is a board card. The top board is the **Mother Board**. There, the heading of the page and the browser tab read **Mother Board**. Every board is the same as the Mother Board, and boards nest to any depth.
 
-- **Turn into a board** is in the menu of every card in a column, below **Pin to top**. A card in a deck does not have it, and a card that already holds a board does not have it. A press gives the card a board of its own, with the same four columns.
+- **Turn into a board** is in the menu of every card in a column, below **Pin to top**. A card in a deck does not have it, and a card that already holds a board does not have it. A press gives the card a board of its own, with the same four columns. **Turn into a shelf** is below it, and gives the card an empty shelf. For more information, refer to [Shelves](#shelves).
 - The text of the card names the board. The name is the first line of the text, cut to 60 letters. The page takes off any heading, quote, bullet, number or checkbox mark at the front of that line. The Gmail subject of a card uses the same rule. Backticks in the name show as a code chip on the card and in the heading, as they do in card text. The browser tab and the Gmail subject show the backticks as you typed them.
 - The head of a deck can turn into a board too. The cards of its deck go to Backlog on the new board, in the same order, and the head becomes a plain board card. The card keeps its text, notes, pin and level.
 - A board card has a **board** tab on its top edge, at the left, with an arrow after the word. A band in the colours of the four columns of its board goes along the top of the card. The colours come from the palette of that board, so each board looks different from outside. Each part of the band is as wide as the count of its column, and a column with no cards has no part. On a board with no cards, the four parts are equal and pale.
@@ -154,18 +154,34 @@ A card can hold a board of its own. Such a card is a board card. The top board i
 - Under the name, a line such as `3 of 9 done` gives the count of Accomplished against the count of Backlog, Now and Accomplished together. Remember is not in the count, because its cards are not tasks. A board with no cards shows `empty board`.
 - On a low card, the band, the name and the line fade with the rest of the card. The tab does not fade.
 - The tab steps into the board. The heading becomes a trail, such as `Mother Board / Work / Robot arm`. Each name before the last is a button that steps back out to that board. The Back and Forward buttons of the browser step out and in too. The address keeps the place after `#`, so a reload or a bookmark opens the same board. The browser tab shows the name of the board you are in.
-- Inside a board, everything acts on that board. This covers new cards, drags, pins, levels, decks and notes. It also covers the counts at the head of each column and the line of counts below the header. So do **clear column**, the toast and **Undo**, **Export** and **Import**. Search is different: it looks in every board, unless you select **this board**.
+- Inside a board, everything acts on that board. This covers new cards, drags, pins, levels, decks and notes. It also covers the counts at the head of each column and the line of counts below the header. So do **clear column**, the toast and **Undo**, **Export** and **Import**. Search is different: it looks in every board of the home, unless you select **this board**.
 - A board card counts as one card in the counts of the board that holds it. The cards inside its board count only inside that board.
 - A board card takes no part in a deck. It cannot join a deck and it cannot head one. When you drag a board card over a card, or a card over a board card, no ring shows. The line shows, and a drop moves the card to that line. A board card dropped on the cards of a deck lands in the column next to that deck, as a head does.
 - A drop never puts a card into another board. To move a card to another board, use **Download this card**, open the other board and **Import** the file there.
 - **Delete** on a board card deletes the card and its whole board in one press. It does not ask first. The toast says how many cards went, such as `Board of 12 cards deleted`, and offers **Undo**. The number is the count of that board, with each board inside it counted as one card.
 - **Undo** puts the card back in the board it came from, even if you stepped into another board before you pressed it. It also opens that board. This holds for every delete: **Undo** returns a card, a note, a deck or a cleared column to the board it came from.
 
+## Shelves
+
+A shelf is a second kind of board. A board has the four fixed columns. A shelf starts with no columns, and you add as many as you need, with the names that you choose. For example, a shelf of recipes can have the columns `Breakfast`, `Soups` and `Desserts`. A board or a shelf keeps its kind. You cannot change a board into a shelf, or a shelf into a board.
+
+- **board** and **shelf**, at the top right of the page, select one of two homes. The **Mother Board** is the home of boards, and the **Mother Shelf** is the home of shelves. Each home has its own cards. The page opens in the home that you used last.
+- **+ column**, at the end of the row, adds a column with the name `New column`, and opens the name for you to type. Enter or a click outside keeps the name. Escape keeps the old name. A click on the name of a column opens it again.
+- The round dot in the head of a column opens a row of colours. The row holds each colour of each palette, one time. A click on a colour gives it to the column. Each column has its own colour, so the **palette** button does not show on a shelf.
+- The bin in the head of a column removes the column with all its cards. It does not ask first. The toast offers **Undo**.
+- Drag the head of a column to move the column. A drop on the left half of a column puts it before that column, and a drop on the right half puts it after.
+- Each column on a shelf has **clear column**.
+- The line of counts below the header is the index of the shelf. It gives each column, with its count, such as `2 Breakfast · 1 Soups`. A click on a column in the index scrolls the row until that column shows. The row scrolls to the side when the columns do not fit the page.
+- Cards on a shelf act as cards on a board: drags, the menu, decks, notes, files, pins, levels, search and **Undo**.
+- A shelf card has a **shelf** tab. Under its name, a line gives the count of its cards, such as `4 cards`. Its band shows the colours of its columns.
+- A board can hold a shelf card, and a shelf can hold a board card. They nest to any depth.
+- Search looks only in the home that you are in. **Undo** keeps its steps for each home, so a switch to the other home and back keeps them.
+
 ## Search
 
 The **/** key opens a window where you type what you look for, and so does Ctrl+K. The hint line under the heading names the key. Escape or a click outside closes the window.
 
-- Search looks in every board at once. It looks in the text of each card and note, as the card shows it. It also looks in the names of files and boards, and in the address behind a link that shows only its words. The marks in the text, such as `**` or `- [ ]`, are not part of the search.
+- Search looks in every board of the home that you are in, at once. It looks in the text of each card and note, as the card shows it. It also looks in the names of files and boards, and in the address behind a link that shows only its words. The marks in the text, such as `**` or `- [ ]`, are not part of the search.
 - A date matches only when you type it in full, as the card shows it, such as `Oct 6`. It can also be in quotes. Then search finds the cards and notes that you wrote on that day. A part of a date, such as `oct` or `6`, does not find a card by its date.
 - Each word that you type must be in the result, in any order. Case does not matter.
 - Words in double quotes, such as `"mill road"`, must stand side by side, in that order. A quote that you have not closed yet counts as separate words, so the list does not go empty while you type.
@@ -197,7 +213,7 @@ Export and Import use two shapes. A whole board is `{"cols": ...}` and replaces 
 
 ## Storage
 
-The board is in `localStorage`, in the key `mother.board.v1`. The Mother Board holds everything, and each board inside it is on its card. The key belongs to one browser on one machine. Export moves a board to another machine. Two tabs on the same board stay in sync.
+The board is in `localStorage`, in the key `mother.board.v1`. The Mother Shelf is in the key `mother.shelf.v1`, and the key `mother.home.v1` holds the home that you used last. The Mother Board holds everything, and each board inside it is on its card. The key belongs to one browser on one machine. Export moves a board to another machine. Two tabs on the same board stay in sync.
 
 The recent searches are in `localStorage` too, in the key `mother.search.v1`. They belong to the browser and not to a board, so Export does not carry them.
 

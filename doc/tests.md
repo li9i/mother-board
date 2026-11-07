@@ -140,4 +140,12 @@ The list follows the sequence of the tests in the file.
 
 - `search lists each board newest first and folds a board by its head`: it makes sure that the results of each board show newest first, and that a note counts by its own date. It makes sure that a click on the head of a board hides the results of that board, and that the arrow keys skip them. It also makes sure that the fold stays for a new search, and that a second click shows the results again. Last, it makes sure that the board you are in comes first.
 
+- `the shelf is a second home that starts empty and keeps its own cards`: it makes sure that **shelf** opens an empty shelf without **palette**, and that a new column stays after a reload. It also makes sure that **board** shows the four columns and that the board keeps its cards.
+
+- `a shelf column renames, takes a colour, moves, clears and goes`: it makes sure that you can change the name and the colour of a column, and drag a column to a new place. It also makes sure that each column has **clear column**, and that the bin removes a column with its cards.
+
+- `a board card can hold a shelf and a shelf card can hold a board`: it makes sure that **Turn into a shelf** gives a card an empty shelf, and that a card on that shelf can turn into a board with the four columns.
+
+- `the shelf index lists its columns and brings one into view`: it makes sure that the line of counts lists each column of a shelf with its count, and that a click on a column scrolls the row until that column shows.
+
 The tests examine the checksum of each file that they read from a zip. For more information, refer to [behaviour.md](behaviour.md#storage).

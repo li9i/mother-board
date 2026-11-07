@@ -2693,3 +2693,162 @@ test('search lists each board newest first and folds a board by its head',
       inside: ['g2', 'g1', 'n', 'm', 'o']
     });
   });
+
+const SHELF = 'mother.shelf.v1';
+
+function shelfCols() {
+  return Array.from(document.querySelectorAll('#board .col'))
+    .map((c) => c.querySelector('h2').textContent);
+}
+
+function addColumn(name) {
+  document.querySelector('#board .add-col').click();
+  const input = document.querySelector('#board .col-name');
+  input.value = name;
+  input.dispatchEvent(new KeyboardEvent('keydown',
+    { key: 'Enter', bubbles: true }));
+}
+
+test('the shelf is a second home that starts empty and keeps its own cards',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], backlog: [
+        { id: 'b', text: 'on the board', created: 1 }], now: [],
+        accomplished: [] } });
+      await page.go();
+      await page.run('document.querySelector(\'#homeSwitch'
+        + ' [data-home="shelf"]\').click()');
+      const empty = await page.run(call(shelfCols));
+      const palette = await page.run(
+        'document.querySelector(".palette-wrap").hidden');
+      await page.run(call(addColumn, 'Soups'));
+      const shelf = await stored(page, SHELF);
+      await page.go();
+      const back = await page.run(call(shelfCols));
+      await page.run('document.querySelector(\'#homeSwitch'
+        + ' [data-home="board"]\').click()');
+      const board = await page.run(call(shelfCols));
+      return { empty, palette, labels: shelf.shelf.map((c) => c.label),
+        back, board, kept: (await stored(page, STORE)).cols.backlog.length };
+    });
+
+    assert.deepStrictEqual(seen, {
+      empty: [], palette: true, labels: ['Soups'], back: ['Soups'],
+      board: ['Remember', 'Backlog', 'Now', 'Accomplished'], kept: 1 });
+  });
+
+test('a shelf column renames, takes a colour, moves, clears and goes',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await page.run('localStorage.setItem("mother.home.v1", "shelf")');
+      await seed(page, SHELF, { shelf: [
+        { key: 'a', label: 'Soups', color: '#cc785c' },
+        { key: 'b', label: 'Cakes', color: '#cc785c' }],
+      cols: { a: [{ id: 's', text: 'fasolada', created: 1 }],
+        b: [{ id: 'c', text: 'baklava', created: 1 }] } });
+      await page.go();
+      const out = { first: await page.run(call(shelfCols)) };
+      await page.run('document.querySelector(\'.col[data-col="a"]'
+        + ' h2\').click()');
+      await page.run('const i = document.querySelector(".col-name");'
+        + ' i.value = "Stews"; i.dispatchEvent(new KeyboardEvent("keydown",'
+        + ' { key: "Enter", bubbles: true }))');
+      await page.run('document.querySelector(\'.col[data-col="a"]'
+        + ' .colcolor\').click()');
+      const pick = await page.run('document.querySelectorAll('
+        + '\'.col[data-col="a"] .swatch\')[3].dataset.color');
+      await page.run('document.querySelectorAll(\'.col[data-col="a"]'
+        + ' .swatch\')[3].click()');
+      await page.run(call(function () {
+        const head = (k) => document.querySelector(
+          '.col[data-col="' + k + '"] .col-head');
+        const box = head('b').getBoundingClientRect();
+        const at = { bubbles: true, cancelable: true,
+          clientX: box.right - 2, clientY: box.top + 4,
+          dataTransfer: new DataTransfer() };
+        head('a').dispatchEvent(new DragEvent('dragstart', at));
+        head('b').dispatchEvent(new DragEvent('dragover', at));
+        head('b').dispatchEvent(new DragEvent('drop', at));
+        head('a').dispatchEvent(new DragEvent('dragend', at));
+      }));
+      out.moved = await page.run(call(shelfCols));
+      const saved = await stored(page, SHELF);
+      out.color = saved.shelf.find((c) => c.key === 'a').color === pick;
+      out.clearable = await page.run('document.querySelectorAll('
+        + '"#board .col .clearbtn").length');
+      await page.run('document.querySelector(\'.col[data-col="b"]'
+        + ' .coldel\').click()');
+      const gone = await stored(page, SHELF);
+      out.left = gone.shelf.map((c) => c.label);
+      out.cards = Object.keys(gone.cols);
+      return out;
+    });
+
+    assert.deepStrictEqual(seen, {
+      first: ['Soups', 'Cakes'], moved: ['Cakes', 'Stews'], color: true,
+      clearable: 2, left: ['Stews'], cards: ['a'] });
+  });
+
+test('a board card can hold a shelf and a shelf card can hold a board',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], backlog: [
+        { id: 'r', text: 'Recipes', created: 1 }], now: [],
+        accomplished: [] } });
+      await page.go();
+      await page.run(call(function () {
+        const card = document.querySelector('.card[data-id="r"]');
+        card.querySelector('.menubtn').click();
+        Array.from(document.querySelectorAll('[role="menu"] button'))
+          .find((b) => /shelf/i.test(b.textContent + b.title)).click();
+      }));
+      const inner = (await stored(page, STORE)).cols.backlog[0].board;
+      await page.run('location.hash = "r"');
+      await until(() => page.run('!!document.querySelector(".add-col")'));
+      await page.run(call(addColumn, 'Soups'));
+      await page.run('document.querySelector(\'.col .addbtn\').click()');
+      await page.run('const t = document.querySelector(".composer.on'
+        + ' textarea"); t.value = "Week"; document.querySelector('
+        + '".composer.on .save").click()');
+      const made = (await stored(page, STORE)).cols.backlog[0].board;
+      const id = made.cols[made.shelf[0].key][0].id;
+      await page.run(call(function (id) {
+        const card = document.querySelector('.card[data-id="' + id + '"]');
+        card.querySelector('.menubtn').click();
+        Array.from(document.querySelectorAll('[role="menu"] button'))
+          .find((b) => /into a board/i.test(b.textContent + b.title)).click();
+      }, id));
+      const shelf = (await stored(page, STORE)).cols.backlog[0].board;
+      const week = shelf.cols[shelf.shelf[0].key][0];
+      return { inner: inner.shelf, board: Object.keys(week.board.cols) };
+    });
+
+    assert.deepStrictEqual(seen, { inner: [],
+      board: ['remember', 'backlog', 'now', 'accomplished'] });
+  });
+
+test('the shelf index lists its columns and brings one into view',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await page.run('localStorage.setItem("mother.home.v1", "shelf")');
+      await seed(page, SHELF, { shelf: ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+        .map((k) => ({ key: k, label: 'Col ' + k, color: '#cc785c' })),
+      cols: { a: [{ id: 'x', text: 'one', created: 1 }] } });
+      await page.go();
+      const names = await page.run('Array.from(document.querySelectorAll('
+        + '"#summary .index-link"))'
+        + '.map((b) => b.textContent.replace(/\\s/g, " "))');
+      await page.run('document.querySelectorAll("#summary .index-link")[6]'
+        + '.click()');
+      const shown = await until(() => page.run(call(function () {
+        const box = document.querySelector('.col[data-col="g"]')
+          .getBoundingClientRect();
+        const room = document.getElementById('board').getBoundingClientRect();
+        return box.left >= room.left - 1 && box.right <= room.right + 1;
+      })));
+      return { names, shown };
+    });
+
+    assert.deepStrictEqual(seen, { names: ['1 Col a', '0 Col b', '0 Col c',
+      '0 Col d', '0 Col e', '0 Col f', '0 Col g'], shown: true });
+  });

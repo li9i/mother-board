@@ -1,6 +1,6 @@
 # Mother Board
 
-This is a board for one person in one HTML file, with the four columns Remember, Backlog, Now and Accomplished.
+This is a board for one person in one HTML file, with the four columns Remember, Backlog, Now and Accomplished. It also has shelves, where you add the columns and name them.
 
 ![The board has cards in each column. A pinned card is at the top of Remember, and Remember and Backlog contain callouts. Backlog holds a board card with its band of colours, a checklist with a picture and a card with a file. Two low cards are at the bottom of Backlog. A deck in Now holds three cards below its head, and one of these cards is done. Accomplished holds a checklist with two ticks and one cross. The cards show nested checklists, a code chip, a fenced block and a link.](doc/board.png)
 
