@@ -2852,3 +2852,60 @@ test('the shelf index lists its columns and brings one into view',
     assert.deepStrictEqual(seen, { names: ['1 Col a', '0 Col b', '0 Col c',
       '0 Col d', '0 Col e', '0 Col f', '0 Col g'], shown: true });
   });
+
+test('an import keeps the kind of the board it lands on', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kind-'));
+  const file = path.join(dir, 'shelf.json');
+  fs.writeFileSync(file, JSON.stringify({ shelf: [
+    { key: 'a', label: 'Soups', color: '#cc785c' }],
+  cols: { a: [{ id: 's', text: 'fasolada', created: 1 }] } }));
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, { cols: { remember: [], backlog: [
+      { id: 'b', text: 'stays', created: 1 }], now: [], accomplished: [] } });
+    await page.go();
+    await page.run('window.confirm = () => true');
+    await page.chosen('document.getElementById("importBtn").click()', [file]);
+    await pause(300);
+    const board = await stored(page, STORE);
+    return { shelf: 'shelf' in board, kept: board.cols.backlog.length,
+      toast: await page.run('document.getElementById("toastMsg")'
+        + '.textContent') };
+  });
+  fs.rmSync(dir, { recursive: true, force: true });
+
+  assert.deepStrictEqual(seen, { shelf: false, kept: 1,
+    toast: 'That file holds a shelf, and this is a board.' });
+});
+
+test('export saves both homes in one file and import brings both back',
+  async () => {
+    const sent = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], backlog: [
+        { id: 'b', text: 'on the board', created: 1 }], now: [],
+        accomplished: [] } });
+      await seed(page, SHELF, { shelf: [
+        { key: 'a', label: 'Soups', color: '#cc785c' }],
+      cols: { a: [{ id: 's', text: 'fasolada', created: 1 }] } });
+      await page.go();
+      return page.saved('document.getElementById("exportBtn").click();'
+        + call(choose, 'Download both homes'), /^mother-homes-\d+\.zip$/,
+      null);
+    });
+    const homes = JSON.parse(unzipped(sent)['board.json']).homes;
+
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'homes-'));
+    const file = path.join(dir, 'homes.zip');
+    fs.writeFileSync(file, sent);
+    const back = await inPage(async (page) => {
+      await page.run('window.confirm = () => true');
+      await page.chosen('document.getElementById("importBtn").click()',
+        [file]);
+      await until(() => page.run('!!localStorage.getItem("' + SHELF + '")'));
+      return { board: (await stored(page, STORE)).cols.backlog[0].text,
+        shelf: (await stored(page, SHELF)).cols.a[0].text };
+    });
+    fs.rmSync(dir, { recursive: true, force: true });
+
+    assert.deepStrictEqual(Object.keys(homes).sort(), ['board', 'shelf']);
+    assert.deepStrictEqual(back, { board: 'on the board', shelf: 'fasolada' });
+  });

@@ -2081,10 +2081,11 @@
     return { cols: {}, shelf: [] };
   }
 
-  function load() {
-    var fresh = home === 'shelf' ? blankShelf() : blank();
+  function load(at) {
+    var which = at || home;
+    var fresh = which === 'shelf' ? blankShelf() : blank();
     try {
-      var raw = lsGet(HOMES[home].store);
+      var raw = lsGet(HOMES[which].store);
       if (!raw) return fresh;
       var parsed = JSON.parse(raw);
       if (!parsed || !parsed.cols) return fresh;
@@ -4900,7 +4901,10 @@
   }
 
   function download(name, data) {
-    var holders = data.card ? holdersOf(data.card) : boardHolders(data);
+    var holders = data.card ? holdersOf(data.card)
+      : data.homes ? Object.keys(data.homes).reduce(function (out, h) {
+        return out.concat(boardHolders(data.homes[h]));
+      }, []) : boardHolders(data);
     var file = name + '-' + Math.floor(Date.now() / 1000) + '.zip';
     zipped(data, holders).then(function (blob) {
       saveBlob(file, blob);
@@ -5086,12 +5090,46 @@
         onClick: function () { download('mother-board', here()); } },
       { icon: 'mail', title: 'Send the board by Gmail', onClick: mailBoard,
         cap: 'Gmail opens with the board downloaded.'
-          + ' Drag the file onto the message.' }
+          + ' Drag the file onto the message.' },
+      { icon: 'down', title: 'Download both homes',
+        onClick: function () { download('mother-homes', homesOf()); } }
     ]);
   });
 
+  function homesOf() {
+    var out = { homes: {} };
+    Object.keys(HOMES).forEach(function (h) {
+      out.homes[h] = h === home ? state : load(h);
+    });
+    return out;
+  }
+
+  function importHomes(parsed, blobs, entries) {
+    var arriving = {};
+    Object.keys(HOMES).forEach(function (h) {
+      arriving[h] = normalizeBoard(parsed.homes[h]);
+    });
+    if (!confirm('Replace both homes with the ones from this file?')) return;
+    unpack(blobs, entries).then(function () {
+      Object.keys(HOMES).forEach(function (h) {
+        if (h === home) return;
+        lsSet(HOMES[h].store, JSON.stringify(arriving[h]));
+        delete stacks[h];
+      });
+      state = arriving[home];
+      path = [];
+      enter(path);
+      commit();
+      show();
+    });
+  }
+
   function importBoard(parsed, blobs, entries) {
     var arriving = normalizeBoard(parsed);
+    if (!arriving.shelf !== !here().shelf) {
+      showToast(arriving.shelf ? KIND_SHELF : KIND_BOARD, false);
+      return;
+    }
     var total = boardSize(arriving);
     if (!confirm('Replace the current board with ' + total + ' card(s) from this file?')) return;
     unpack(blobs, entries).then(function () {
@@ -5145,6 +5183,8 @@
   });
   var NOT_EXPORT = "That file doesn't look like a Mother Board export.";
   var ON_BOARD = 'That card is already on the board.';
+  var KIND_SHELF = 'That file holds a shelf, and this is a board.';
+  var KIND_BOARD = 'That file holds a board, and this is a shelf.';
 
   function importZip(f) {
     unzip(f).then(function (found) {
@@ -5179,6 +5219,7 @@
     var blobs = parsed.blobs || {};
     delete parsed.blobs;
     if (parsed.card) importCard(parsed, blobs, entries);
+    else if (parsed.homes) importHomes(parsed, blobs, entries);
     else if (parsed.cols) importBoard(parsed, blobs, entries);
     else throw new Error('bad shape');
   }

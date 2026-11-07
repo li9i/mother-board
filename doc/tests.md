@@ -148,4 +148,8 @@ The list follows the sequence of the tests in the file.
 
 - `the shelf index lists its columns and brings one into view`: it makes sure that the line of counts lists each column of a shelf with its count, and that a click on a column scrolls the row until that column shows.
 
+- `an import keeps the kind of the board it lands on`: it makes sure that an import of a shelf file onto a board does not change the board, and that the toast gives the cause.
+
+- `export saves both homes in one file and import brings both back`: it makes sure that **Download both homes** writes the two homes to one zip, and that an import of that zip puts back the two homes.
+
 The tests examine the checksum of each file that they read from a zip. For more information, refer to [behaviour.md](behaviour.md#storage).
