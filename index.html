@@ -906,6 +906,28 @@
     margin-bottom: 7px;
     opacity: var(--fade, 1);
   }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text, var(--slate));
+    opacity: var(--fade, 1);
+    padding-bottom: 6px;
+    margin-bottom: 7px;
+    border-bottom: 1px solid var(--gray-200);
+    word-break: break-word;
+  }
+  .card-title:empty { display: none; }
+  .title-name {
+    width: 100%;
+    margin-bottom: 7px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    padding: 2px 4px;
+  }
   .ctext {
     font-size: 13px;
     line-height: 1.35;
@@ -2645,27 +2667,48 @@
     renameColumn(c, views[c.key].el.querySelector('h2'));
   }
 
-  function renameColumn(c, name) {
-    var input = el('input', 'col-name');
-    input.value = c.label;
-    name.replaceWith(input);
+  function askName(cls, old, spot, keep) {
+    var input = el('input', cls);
+    input.value = old;
+    spot.replaceWith(input);
     input.focus();
     input.select();
     var done = false;
-    function finish(keep) {
+    function finish(ok) {
       if (done) return;
       done = true;
-      var label = input.value.trim();
-      if (keep && label && label !== c.label) {
-        c.label = label;
-        commit();
-      } else input.replaceWith(name);
+      if (!keep(ok ? input.value.trim() : old)) input.replaceWith(spot);
     }
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') finish(true);
       if (e.key === 'Escape') finish(false);
     });
     input.addEventListener('blur', function () { finish(true); });
+  }
+
+  function renameColumn(c, name) {
+    askName('col-name', c.label, name, function (label) {
+      if (!label || label === c.label) return false;
+      c.label = label;
+      commit();
+      return true;
+    });
+  }
+
+  function editTitle(id, card) {
+    var spot = card.querySelector('.card-title, .board-title');
+    if (!spot) {
+      spot = el('div', 'card-title');
+      card.insertBefore(spot, card.querySelector('.ctext'));
+    }
+    card.draggable = false;
+    askName('title-name', find(id).card.title || '', spot, function (title) {
+      var item = find(id).card;
+      if (title) item.title = title;
+      else delete item.title;
+      commit();
+      return true;
+    });
   }
 
   function removeColumn(key) {
@@ -3210,6 +3253,8 @@
       card.classList.add('found');
     }
 
+    if (spec.title) card.appendChild(fillCode(el('div', 'card-title'),
+      spec.title));
     var text = el('div', 'ctext');
     if (spec.head) text.appendChild(spec.head);
     else renderText(text, item);
@@ -3814,6 +3859,9 @@
         disabled: awayEmpty,
         cap: awayEmpty ? 'The ' + away + ' has no columns yet.' : null,
         onClick: function () { homeMenu(card.id, item); } });
+      buttons.unshift({ icon: 'note',
+        title: card.title ? 'Edit title' : 'Add a title',
+        onClick: function () { editTitle(card.id, item); } });
       buttons.unshift({ icon: 'pin', title: card.pinned ? 'Unpin' : 'Pin to top',
         onClick: function () { togglePin(card.id); } });
       var keys = keysOf(here());
@@ -3846,6 +3894,7 @@
       head: card.board && !deck
         ? fillCode(el('div', 'board-title'), cardTitle(card)) : null,
       hideFiles: card.board && !deck,
+      title: card.board && !deck ? null : card.title,
       attached: attached,
       buttons: buttons
     });
@@ -4848,7 +4897,8 @@
     out.push(seekHit(where, item, {
       glyph: item.board ? 'board' : where.head ? 'deck'
         : colOf(where.col, where.home).mark,
-      words: seen.words, links: seen.links, time: item.created,
+      words: item.title ? item.title + '\n' + seen.words : seen.words,
+      links: seen.links, time: item.created,
       where: kind + ' · ' + col + more }));
     item.notes.forEach(function (note) {
       var said = shownText(note.text);
@@ -5046,8 +5096,8 @@
   }
 
   function cardTitle(card) {
-    var line = '';
-    card.text.split('\n').some(function (l) {
+    var line = card.title || '';
+    if (!line) card.text.split('\n').some(function (l) {
       var t = l.replace(/^\s*(#{1,6}\s+|[-*+]\s+(\[[ xX]\]\s+)?|\d+[.)]\s+|>\s*)/, '').trim();
       if (!t) return false;
       line = t;

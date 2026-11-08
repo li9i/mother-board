@@ -158,4 +158,6 @@ The list follows the sequence of the tests in the file.
 
 - `a move to a shelf with no columns is grey and the menu says why`: it makes sure that, when the Mother Shelf has no column, **Move to Mother Shelf** is grey, that the line under it gives the reason, and that a press on it does not change the board.
 
+- `a card takes a title from its menu and the title names it`: it adds a title to a card from its menu, and makes sure that the title is saved and shows above the text. It makes sure that the menu then says **Edit title**, that Escape keeps the old title, that search finds the card by its title, and that the Gmail subject carries the title. It then makes sure that an empty title removes it. It gives a board card a title and makes sure that the title names the board on the card, in the trail and in the browser tab. Last, it makes sure that a card in a deck has no **Add a title**.
+
 The tests examine the checksum of each file that they read from a zip. For more information, refer to [behaviour.md](behaviour.md#storage).

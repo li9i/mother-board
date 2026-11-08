@@ -3096,3 +3096,83 @@ test('a move to a shelf with no columns is grey and the menu says why',
     assert.deepStrictEqual(seen, { row: { disabled: true,
       cap: 'The Mother Shelf has no columns yet.' }, kept: 1 });
   });
+
+const ADD_TITLE = 'Add a title';
+const EDIT_TITLE = 'Edit title';
+
+function titleOf(id) {
+  const card = document.querySelector('.card[data-id="' + id + '"]');
+  const title = card.querySelector('.card-title');
+  return { title: title && title.checkVisibility() ? title.textContent : null,
+    first: card.firstElementChild.className,
+    head: card.querySelector('.board-title')
+      && card.querySelector('.board-title').textContent };
+}
+
+function typeTitle(words, key) {
+  const input = document.querySelector('.card .title-name');
+  input.value = words;
+  input.dispatchEvent(new KeyboardEvent('keydown',
+    { key, bubbles: true }));
+}
+
+test('a card takes a title from its menu and the title names it',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], accomplished: [],
+        backlog: [
+          { id: 'a', text: 'Washer is 15mm', created: 1 },
+          { id: 'b', text: 'Garden', created: 1, board: { cols: {} } }],
+        now: [{ id: 'h', text: 'Move house', created: 1,
+          cards: [{ id: 'k', text: 'Book the van', created: 1 }] }] } });
+      await page.go();
+      await page.run('window.open = (url) => { window.mailed = url; }');
+      const out = {};
+      await page.run(menuOf('a') + call(choose, ADD_TITLE));
+      await page.run(call(typeTitle, 'Kitchen tap', 'Enter'));
+      out.added = { stored: (await stored(page, STORE)).cols.backlog[0].title,
+        shown: await page.run(call(titleOf, 'a')) };
+      await page.run(menuOf('a'));
+      out.rows = await page.run(call(choices));
+      await page.run(call(choose, EDIT_TITLE));
+      await page.run(call(typeTitle, 'Bathroom tap', 'Escape'));
+      out.kept = await page.run(call(titleOf, 'a'));
+      await page.run(call(keyIn, 'body', '/'));
+      out.found = await page.run(call(searchFor, 'kitchen'));
+      await page.run(call(keyIn, '#findInput', 'Escape'));
+      await page.run(menuOf('a') + call(choose, 'Send this card by Gmail'));
+      out.subject = await page.run(
+        'new URL(window.mailed).searchParams.get("su")');
+      await page.run(menuOf('a') + call(choose, EDIT_TITLE));
+      await page.run(call(typeTitle, '', 'Enter'));
+      out.gone = { stored: 'title' in (await stored(page, STORE))
+        .cols.backlog[0], shown: await page.run(call(titleOf, 'a')) };
+      await page.run(menuOf('b') + call(choose, ADD_TITLE));
+      await page.run(call(typeTitle, 'Allotment', 'Enter'));
+      out.board = await page.run(call(titleOf, 'b'));
+      await page.run('location.hash = "b"');
+      await until(() => page.run('document.title === "Allotment"'));
+      out.trail = await page.run('document.getElementById("trail")'
+        + '.textContent');
+      await page.run('location.hash = ""');
+      await until(() => page.run('!!document.querySelector(\''
+        + cardOf('k') + '\')'));
+      await page.run(menuOf('k'));
+      out.deckRows = await page.run(call(choices));
+      return out;
+    });
+
+    assert.deepStrictEqual(seen.added, { stored: 'Kitchen tap',
+      shown: { title: 'Kitchen tap', first: 'card-title', head: null } });
+    assert.ok(seen.rows.includes(EDIT_TITLE));
+    assert.ok(!seen.rows.includes(ADD_TITLE));
+    assert.deepStrictEqual(seen.kept.title, 'Kitchen tap');
+    assert.deepStrictEqual(seen.found, ['a']);
+    assert.match(seen.subject, /^Mother Board card: Kitchen tap \(a\)$/);
+    assert.deepStrictEqual(seen.gone, { stored: false,
+      shown: { title: null, first: 'ctext', head: null } });
+    assert.deepStrictEqual(seen.board, { title: null, first: 'board-tab',
+      head: 'Allotment' });
+    assert.match(seen.trail, /Mother Board\s*\/\s*Allotment/);
+    assert.ok(!seen.deckRows.includes(ADD_TITLE));
+  });
