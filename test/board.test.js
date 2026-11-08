@@ -2717,6 +2717,7 @@ test('the shelf is a second home that starts empty and keeps its own cards',
         accomplished: [] } });
       await page.go();
       await page.run('document.querySelector(\'.home-pick\').click()');
+      const homes = await page.run(call(choices));
       await page.run('document.querySelector(\'.card-menu'
         + ' .home-shelf\').click()');
       const empty = await page.run(call(shelfCols));
@@ -2730,11 +2731,12 @@ test('the shelf is a second home that starts empty and keeps its own cards',
       await page.run('document.querySelector(\'.card-menu'
         + ' .home-board\').click()');
       const board = await page.run(call(shelfCols));
-      return { empty, palette, labels: shelf.shelf.map((c) => c.label),
+      return { homes, empty, palette,
+        labels: shelf.shelf.map((c) => c.label),
         back, board, kept: (await stored(page, STORE)).cols.backlog.length };
     });
 
-    assert.deepStrictEqual(seen, {
+    assert.deepStrictEqual(seen, { homes: ['Board', 'Shelf'],
       empty: [], palette: true, labels: ['Soups'], back: ['Soups'],
       board: ['Remember', 'Backlog', 'Now', 'Accomplished'], kept: 1 });
   });

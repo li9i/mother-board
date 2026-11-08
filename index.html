@@ -5059,7 +5059,8 @@
       closeMenu();
       if (mine) return;
       openMenu(null, pick, Object.keys(HOMES).map(function (k) {
-        return { cls: 'home-' + k, icon: k, title: HOMES[k].name,
+        return { cls: 'home-' + k, icon: k,
+          title: HOMES[k].name.split(' ')[1],
           onClick: function () { switchHome(k); } };
       }));
     });

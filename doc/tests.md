@@ -140,7 +140,7 @@ The list follows the sequence of the tests in the file.
 
 - `search lists each board newest first and folds a board by its head`: it makes sure that the results of each board show newest first, and that a note counts by its own date. It makes sure that a click on the head of a board hides the results of that board, and that the arrow keys skip them. It also makes sure that the fold stays for a new search, and that a second click shows the results again. Last, it makes sure that the board you are in comes first.
 
-- `the shelf is a second home that starts empty and keeps its own cards`: it makes sure that **shelf** opens an empty shelf without **palette**, and that a new column stays after a reload. It also makes sure that **board** shows the four columns and that the board keeps its cards.
+- `the shelf is a second home that starts empty and keeps its own cards`: it makes sure that the menu of the title holds the rows **Board** and **Shelf**, and that **Shelf** opens an empty shelf without **palette**, and that a new column stays after a reload. It also makes sure that **Board** shows the four columns and that the board keeps its cards.
 
 - `a shelf column renames, takes a colour, moves, clears and goes`: it makes sure that you can change the name and the colour of a column, and drag a column to a new place. It also makes sure that each column has **clear column**, and that the bin removes a column with its cards.
 
