@@ -2850,7 +2850,8 @@ test('a board card can hold a shelf and a shelf card can hold a board',
         const card = document.querySelector('.card[data-id="r"]');
         card.querySelector('.menubtn').click();
         Array.from(document.querySelectorAll('[role="menu"] button'))
-          .find((b) => /shelf/i.test(b.textContent + b.title)).click();
+          .find((b) => /into a shelf/i.test(b.textContent + b.title))
+          .click();
       }));
       const inner = (await stored(page, STORE)).cols.backlog[0].board;
       await page.run('location.hash = "r"');
@@ -3001,4 +3002,97 @@ test('a shelf column folds by a chevron and its search rows have no mark',
     assert.deepStrictEqual(seen.folded, ['col-head']);
     assert.deepStrictEqual(seen.boardHits, [1]);
     assert.deepStrictEqual(seen.shelfHits, [0]);
+  });
+
+const TO_SHELF = 'Move to Mother Shelf';
+const TO_BOARD = 'Move to Mother Board';
+
+function menuCaps() {
+  return Array.from(document.querySelectorAll('[role="menu"] .cap'),
+    (c) => c.textContent);
+}
+
+function homeRow(word) {
+  const row = Array.from(document.querySelectorAll('[role="menu"] button'))
+    .find((b) => b.textContent.trim() === word);
+  return row && { disabled: row.disabled,
+    cap: row.nextElementSibling && row.nextElementSibling.textContent };
+}
+
+test('a card moves to a column of a board in the other home and back',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [], backlog: [
+          { id: 'm', text: 'fasolada', created: 1,
+            notes: [{ id: 'n', text: 'more beans', created: 1 }] }] } });
+      await seed(page, SHELF, { shelf: [
+        { key: 'a', label: 'Soups', color: '#cc785c' }],
+      cols: { a: [{ id: 'r', text: 'Recipes', created: 1, board: {
+        shelf: [{ key: 'x', label: 'Breakfast', color: '#cc785c' }],
+        cols: { x: [] } } }] } });
+      await page.go();
+      const shelfOf = async () => {
+        const s = await stored(page, SHELF);
+        return { top: s.cols.a.map((c) => c.id),
+          inner: s.cols.a[0].board.cols.x.map((c) => c.id) };
+      };
+      const boardOf = async () => (await stored(page, STORE)).cols.backlog
+        .map((c) => c.id);
+      const out = {};
+      await page.run(menuOf('m') + call(choose, TO_SHELF));
+      out.caps = await page.run(call(menuCaps));
+      out.rows = await page.run(call(choices));
+      await page.run(call(choose, 'Breakfast'));
+      out.moved = { board: await boardOf(), shelf: await shelfOf(),
+        note: (await stored(page, SHELF)).cols.a[0].board.cols.x[0]
+          .notes[0].text, toast: await page.run(call(toastShown)) };
+      await page.run('document.getElementById("undoBtn").click()');
+      out.undone = { board: await boardOf(), shelf: await shelfOf() };
+      await page.run(call(ctrlIn, 'body', 'y'));
+      out.redone = { board: await boardOf(), shelf: await shelfOf() };
+      await page.run(call(ctrlIn, 'body', 'z'));
+      out.again = { board: await boardOf(), shelf: await shelfOf() };
+      await page.run('localStorage.setItem("mother.home.v1", "shelf")');
+      await page.go();
+      await page.run(menuOf('r') + call(choose, TO_BOARD));
+      out.boardRows = await page.run(call(choices));
+      await page.run(call(choose, 'Now'));
+      out.back = { now: (await stored(page, STORE)).cols.now
+        .map((c) => c.id), shelf: (await stored(page, SHELF)).cols.a };
+      return out;
+    });
+
+    assert.deepStrictEqual(seen.caps, ['Mother Shelf',
+      'Mother Shelf / Recipes']);
+    assert.deepStrictEqual(seen.rows, ['Soups', 'Breakfast']);
+    assert.deepStrictEqual(seen.moved, { board: [],
+      shelf: { top: ['r'], inner: ['m'] }, note: 'more beans',
+      toast: { msg: 'Moved to Breakfast on Mother Shelf / Recipes',
+        undo: true } });
+    const home = { board: ['m'], shelf: { top: ['r'], inner: [] } };
+    assert.deepStrictEqual(seen.undone, home);
+    assert.deepStrictEqual(seen.redone, { board: [],
+      shelf: { top: ['r'], inner: ['m'] } });
+    assert.deepStrictEqual(seen.again, home);
+    assert.deepStrictEqual(seen.boardRows,
+      ['Remember', 'Backlog', 'Now', 'Accomplished']);
+    assert.deepStrictEqual(seen.back, { now: ['r'], shelf: [] });
+  });
+
+test('a move to a shelf with no columns is grey and the menu says why',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [], backlog: [
+          { id: 'm', text: 'fasolada', created: 1 }] } });
+      await page.go();
+      await page.run(menuOf('m'));
+      const row = await page.run(call(homeRow, TO_SHELF));
+      await page.run(call(choose, TO_SHELF));
+      return { row, kept: (await stored(page, STORE)).cols.backlog.length };
+    });
+
+    assert.deepStrictEqual(seen, { row: { disabled: true,
+      cap: 'The Mother Shelf has no columns yet.' }, kept: 1 });
   });

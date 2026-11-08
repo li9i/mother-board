@@ -1283,6 +1283,8 @@
     display: none;
     flex-direction: column;
     gap: 1px;
+    max-height: calc(100vh - 16px);
+    overflow-y: auto;
   }
   .card-menu.on { display: flex; }
   .card-menu .cap {
@@ -2092,6 +2094,7 @@
   var drag = null;
   var lift = null;
   var toastTimer = null;
+  var awayEmpty = false;
 
   function blank() {
     var cols = {};
@@ -2211,10 +2214,12 @@
     return down ? (all - down) + '+' + down : String(all);
   }
 
-  function save() {
+  function save(away) {
     var now = JSON.stringify(state);
     if (now === last) return;
-    undos = undos.concat(stepOf(path)).slice(-STEPS);
+    var step = stepOf(path);
+    if (away) step.away = away;
+    undos = undos.concat(step).slice(-STEPS);
     redos = [];
     keepBoard(now);
     hideToast();
@@ -2251,7 +2256,12 @@
   function travel(from, to) {
     var step = from.pop();
     if (!step) return;
-    to.push(stepOf(step.path));
+    var back = stepOf(step.path);
+    if (step.away) {
+      back.away = step.away;
+      carryAway(step.away, from === undos);
+    }
+    to.push(back);
     state = keepFolds(JSON.parse(step.board));
     keepBoard(JSON.stringify(state));
     hideToast();
@@ -2290,14 +2300,14 @@
     travel(redos, undos);
   }
 
-  function commit() {
+  function commit(away) {
     orderGroups(here());
-    save();
+    save(away);
     render();
   }
 
-  function steps(ids) {
-    var out = [{ name: HOMES[home].name, board: state }];
+  function steps(ids, top) {
+    var out = [top || { name: HOMES[home].name, board: state }];
     ids.every(function (id) {
       var found = find(id, out[out.length - 1].board);
       var card = found && !found.deck && found.card.board ? found.card : null;
@@ -2927,6 +2937,68 @@
     if (found) moveItem(found.list, here().cols[toCol], id, at);
   }
 
+  function otherHome() {
+    return home === 'board' ? 'shelf' : 'board';
+  }
+
+  function boardsIn(board, at) {
+    return keysOf(board).reduce(function (out, k) {
+      return board.cols[k].reduce(function (all, c) {
+        return c.board ? all.concat(boardsIn(c.board, at.concat(c.id))) : all;
+      }, out);
+    }, [at]);
+  }
+
+  function homeTargets() {
+    var to = otherHome();
+    var top = { name: HOMES[to].name, board: load(to) };
+    return boardsIn(top.board, []).map(function (ids) {
+      var trail = steps(ids, top);
+      return { ids: ids, board: trail[trail.length - 1].board,
+        name: trail.map(function (s) { return s.name; }).join(' / ') };
+    }).filter(function (t) { return colsOf(t.board).length; });
+  }
+
+  function homeMenu(id, item) {
+    var rows = [];
+    homeTargets().forEach(function (t) {
+      rows.push({ head: t.name });
+      colsOf(t.board).forEach(function (c) {
+        rows.push({ icon: c.mark || SHELF_FOLD, title: c.label,
+          onClick: function () { moveHome(id, t, c); } });
+      });
+    });
+    openMenu(item, item.querySelector('.menubtn'), rows);
+  }
+
+  function moveHome(id, target, col) {
+    var found = find(id);
+    found.list.splice(found.index, 1);
+    var away = { home: otherHome(), card: JSON.stringify(found.card),
+      into: target.ids, col: col.key };
+    carryAway(away, false);
+    commit(away);
+    showToast('Moved to ' + col.label + ' on ' + target.name, true);
+  }
+
+  function carryAway(away, back) {
+    var top = { name: HOMES[away.home].name, board: load(away.home) };
+    var card = JSON.parse(away.card);
+    if (back) {
+      boardsIn(top.board, []).some(function (ids) {
+        var found = find(card.id, steps(ids, top).pop().board);
+        if (found) found.list.splice(found.index, 1);
+        return found;
+      });
+    } else {
+      var board = steps(away.into, top).pop().board;
+      board.cols[away.col].unshift(card);
+      orderGroups(board);
+    }
+    lsSet(HOMES[away.home].store, JSON.stringify(top.board));
+    delete stacks[away.home];
+  }
+
   function dropCard(id, toCol, at) {
     moveCard(id, toCol, at);
   }
@@ -3080,7 +3152,9 @@
   function openMenu(card, button, actions) {
     menu.innerHTML = '';
     actions.forEach(function (a) {
-      if (a.pair) {
+      if (a.head) {
+        menu.appendChild(el('div', 'cap', a.head));
+      } else if (a.pair) {
         var pair = el('div', 'pair');
         a.pair.forEach(function (b) { pair.appendChild(menuRow(b)); });
         menu.appendChild(pair);
@@ -3735,6 +3809,11 @@
         buttons.unshift({ icon: 'board', title: 'Turn into a board',
           onClick: function () { turnIntoBoard(card.id); } });
       }
+      var away = HOMES[otherHome()].name;
+      buttons.unshift({ icon: otherHome(), title: 'Move to ' + away,
+        disabled: awayEmpty,
+        cap: awayEmpty ? 'The ' + away + ' has no columns yet.' : null,
+        onClick: function () { homeMenu(card.id, item); } });
       buttons.unshift({ icon: 'pin', title: card.pinned ? 'Unpin' : 'Pin to top',
         onClick: function () { togglePin(card.id); } });
       var keys = keysOf(here());
@@ -4869,6 +4948,7 @@
 
   function render() {
     closeMenu();
+    awayEmpty = !homeTargets().length;
     renderTrail();
     if (built !== JSON.stringify(colsOf(here()))) buildColumns();
     colsOf(here()).forEach(function (c) {

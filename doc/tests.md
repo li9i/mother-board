@@ -154,4 +154,8 @@ The list follows the sequence of the tests in the file.
 
 - `a shelf column folds by a chevron and its search rows have no mark`: it makes sure that a column on a shelf shows a chevron in front of its name, and that a click on the chevron folds the column. It also makes sure that no column on the board shows the chevron. It then makes sure that a search result from the board shows the mark of its column, and that a search result from the shelf shows no mark.
 
+- `a card moves to a column of a board in the other home and back`: it moves a card with a note from the Mother Board to a column of a shelf inside the Mother Shelf. It makes sure that the menu lists each board of the shelf home with its columns, that the card leaves the board and lands with its note, and that the toast names the column and the board. It then makes sure that **Undo**, Ctrl+Y and Ctrl+Z move the card back and forth in the two homes. Last, it moves a shelf card to Now on the Mother Board.
+
+- `a move to a shelf with no columns is grey and the menu says why`: it makes sure that, when the Mother Shelf has no column, **Move to Mother Shelf** is grey, that the line under it gives the reason, and that a press on it does not change the board.
+
 The tests examine the checksum of each file that they read from a zip. For more information, refer to [behaviour.md](behaviour.md#storage).

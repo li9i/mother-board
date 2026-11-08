@@ -8,7 +8,7 @@ The full behaviour of the board.
 
 **burst**, at the end of the row inside the box, decides what a saved card leaves behind. Off, the box closes once the card is in. On, it stays open and empty, ready for the next one. The switch is in the box, so it is there only while you are adding. One setting serves every box on the page, including the ones for notes and decks, and the board remembers it. It starts off.
 
-**≡** on a card opens the menu. The menu holds **Move left** and **Move right** side by side on its first row, then **Pin to top**, **Turn into a board**, **Attach a file**, **Download this card**, **Send this card by Gmail** and, last and in red, **Delete**. Escape or a click outside closes the menu. **Delete** removes the card in one press. A note carries a bin and a clip, with no menu. Files, below, has the clip.
+**≡** on a card opens the menu. The menu holds **Move left** and **Move right** side by side on its first row, then **Pin to top**, **Move to Mother Shelf** or **Move to Mother Board**, **Turn into a board**, **Attach a file**, **Download this card**, **Send this card by Gmail** and, last and in red, **Delete**. Escape or a click outside closes the menu. **Delete** removes the card in one press. A note carries a bin and a clip, with no menu. Files, below, has the clip.
 
 **A double click** on a card opens its text in a box. This is the one way to write the text, and a checkbox is the one thing that a single click changes. The same keys apply. A single click does nothing else, and a double click on a link or a button does what that link or button does. A note behaves in the same way.
 
@@ -157,7 +157,7 @@ A card can hold a board of its own. Such a card is a board card. The top board i
 - Inside a board, everything acts on that board. This covers new cards, drags, pins, levels, decks and notes. It also covers the counts at the head of each column and the line of counts below the header. So do **clear column**, the toast and **Undo**, **Export** and **Import**. Search is different: it looks in every board of the home, unless you select **this board**.
 - A board card counts as one card in the counts of the board that holds it. The cards inside its board count only inside that board.
 - A board card takes no part in a deck. It cannot join a deck and it cannot head one. When you drag a board card over a card, or a card over a board card, no ring shows. The line shows, and a drop moves the card to that line. A board card dropped on the cards of a deck lands in the column next to that deck, as a head does.
-- A drop never puts a card into another board. To move a card to another board, use **Download this card**, open the other board and **Import** the file there.
+- A drop never puts a card into another board. To move a card to another board of the same home, use **Download this card**, open the other board and **Import** the file there. To move it to the other home, refer to [Shelves](#shelves).
 - **Delete** on a board card deletes the card and its whole board in one press. It does not ask first. The toast says how many cards went, such as `Board of 12 cards deleted`, and offers **Undo**. The number is the count of that board, with each board inside it counted as one card.
 - **Undo** puts the card back in the board it came from, even if you stepped into another board before you pressed it. It also opens that board. This holds for every delete: **Undo** returns a card, a note, a deck or a cleared column to the board it came from.
 
@@ -176,6 +176,9 @@ A shelf is a second kind of board. A board has the four fixed columns. A shelf s
 - A shelf card has a **shelf** tab. Under its name, a line gives the count of its cards, such as `4 cards`. Its band shows the colours of its columns.
 - A board can hold a shelf card, and a shelf can hold a board card. They nest to any depth.
 - Search looks only in the home that you are in. **Undo** keeps its steps for each home, so a switch to the other home and back keeps them.
+- **Move to Mother Shelf** in the menu of a card on the Mother Board moves the card to the Mother Shelf. **Move to Mother Board** on a shelf does the reverse. A card in a deck does not have it. A press opens a list of every board in the other home, each with its trail as a head and its columns below, such as `Mother Shelf / Recipes` and then `Breakfast`. A click on a column puts the card at the top of that column, with its notes, files, deck and board. The toast says where, such as `Moved to Breakfast on Mother Shelf / Recipes`, and offers **Undo**.
+- When the other home has no column, the row is grey, and the line under it says `The Mother Shelf has no columns yet.`
+- The move is one step in the home where you made it. Ctrl+Z, Ctrl+Y and **Undo** take the card out of the other home and put it back, or the reverse. A move removes the steps of the other home, as a change in a different tab does, so a Ctrl+Z there cannot lose the card.
 
 ## Search
 
