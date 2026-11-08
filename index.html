@@ -39,6 +39,7 @@
     font-size: 14px;
     line-height: 1.5;
   }
+  html { scrollbar-gutter: stable; }
   .wrap {
     max-width: 1440px;
     margin: 0 auto;
@@ -390,35 +391,41 @@
     border-radius: 4px;
     padding: 0 4px;
   }
-  .colcolor,
-  .coldel {
+  .col-head .menubtn { align-self: center; }
+  .col-grip {
     display: flex;
-    flex: none;
     align-self: center;
-    padding: 2px;
-    background: none;
-    border: 0;
-    border-radius: 4px;
-    cursor: pointer;
-    color: var(--head, var(--slate));
+    color: var(--gray-500);
+    cursor: grab;
   }
-  .colcolor::before {
-    content: "";
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--rule);
-    box-shadow: inset 0 0 0 1px rgba(20, 20, 19, 0.2);
-  }
-  .coldel svg { width: 14px; height: 14px; }
-  .colcolor:hover,
-  .coldel:hover { background: rgba(20, 20, 19, 0.08); }
-  .col-swatches {
+  .col-grip svg { width: 14px; height: 14px; }
+  .col[data-drop="above"] { box-shadow: 0 -4px 0 var(--clay); }
+  .col[data-drop="below"] { box-shadow: 0 4px 0 var(--clay); }
+  .col[data-drop="left"] { box-shadow: -4px 0 0 var(--clay); }
+  .col[data-drop="right"] { box-shadow: 4px 0 0 var(--clay); }
+  .stack {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 0 14px 10px;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
   }
+  .col-head { position: relative; }
+  .col:has(.col-swatches:not([hidden])) { overflow: visible; }
+  .col-swatches {
+    position: absolute;
+    top: 100%;
+    right: 8px;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: repeat(8, 18px);
+    gap: 4px;
+    padding: 8px;
+    background: var(--ivory);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(20, 20, 19, 0.15);
+  }
+  .col-swatches[hidden] { display: none; }
   .swatch {
     width: 18px;
     height: 18px;
@@ -436,7 +443,23 @@
     cursor: pointer;
   }
   .index-link:hover { text-decoration: underline; }
-  #homeSwitch { justify-content: center; }
+  .home-pick {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 6px;
+  }
+  .home-pick svg { width: 18px; height: 18px; transform: rotate(90deg); }
+  .home-pick:hover { color: var(--clay-d); }
   .col-divider {
     align-self: stretch;
     width: 1px;
@@ -1674,10 +1697,6 @@
         <div class="hintline">drag cards between columns <span class="toolsep">·</span> double-click a card to edit <span class="toolsep">·</span> hover for more options <span class="toolsep">·</span> ctrl-z/y to undo/redo <span class="toolsep">·</span> / to search</div>
       </div>
       <div class="tools" id="tools">
-        <div class="scope" id="homeSwitch">
-          <button type="button" data-home="board" aria-pressed="true">board</button>
-          <button type="button" data-home="shelf" aria-pressed="false">shelf</button>
-        </div>
         <button class="pill" id="tipsBtn" type="button" aria-haspopup="dialog">tips</button>
         <span class="palette-wrap">
           <button class="pill" id="paletteBtn" aria-expanded="false" aria-haspopup="true">palette</button>
@@ -1846,6 +1865,7 @@
        + 'M5.11 18.89l1.94-1.94 M16.95 7.05l1.94-1.94',
     tick: 'M20 6L9 17l-5-5',
     bar: 'M6 12h12',
+    tint: 'M12 4a8 8 0 1 0 0 16 8 8 0 1 0 0-16Z',
     cross: 'M18 6L6 18 M6 6l12 12',
     board: 'M3.5 4.5h17v15h-17Z M8 4.5v15 M12 4.5v15 M16 4.5v15',
     shelf: 'M3.5 4.5h17v15h-17Z M3.5 12h17 M8 4.5v7.5 M14 12v7.5',
@@ -2461,6 +2481,7 @@
   }
 
   var board = document.getElementById('board');
+  var openSwatches = null;
   var views = {};
   var built = null;
 
@@ -2479,6 +2500,20 @@
     var add = textBtn('add-col', '+ column');
     add.addEventListener('click', addColumn);
     board.appendChild(add);
+    stackColumns();
+  }
+
+  function stackColumns() {
+    if (!here().shelf) return;
+    var add = board.querySelector('.add-col');
+    var stack = null;
+    colsOf(here()).forEach(function (c) {
+      if (!stack || !c.under) {
+        stack = el('div', 'stack');
+        board.insertBefore(stack, add);
+      }
+      stack.appendChild(views[c.key].el);
+    });
   }
 
   function makeColumn(c, shelf) {
@@ -2505,17 +2540,15 @@
     var swatches = shelf ? makeSwatches(c) : null;
     if (shelf) {
       name.addEventListener('click', function () { renameColumn(c, name); });
-      var tint = textBtn('colcolor');
-      tint.setAttribute('aria-label', 'Colour of ' + c.label);
-      tint.addEventListener('click', function () {
-        swatches.hidden = !swatches.hidden;
-      });
-      var bin = textBtn('coldel');
-      bin.setAttribute('aria-label', 'Remove ' + c.label);
-      bin.appendChild(icon('bin'));
-      bin.addEventListener('click', function () { removeColumn(c.key); });
-      head.appendChild(tint);
-      head.appendChild(bin);
+      head.appendChild(el('span', 'col-grip')).appendChild(icon('grip'));
+      head.appendChild(makeMenuButton(null, [
+        { cls: 'colcolor', icon: 'tint', title: 'Colour',
+          onClick: function () {
+            swatches.hidden = false;
+            openSwatches = swatches;
+          } },
+        { cls: 'coldel', icon: 'bin', title: 'Remove column',
+          onClick: function () { removeColumn(c.key); } }]));
       wireColumnDrag(head, column, c.key);
     }
 
@@ -2538,8 +2571,8 @@
       foot.appendChild(clear);
     }
 
+    if (swatches) head.appendChild(swatches);
     column.appendChild(head);
-    if (swatches) column.appendChild(swatches);
     column.appendChild(addWrap);
     column.appendChild(body);
     if (foot) column.appendChild(foot);
@@ -2590,8 +2623,10 @@
   function addColumn() {
     var shelf = here().shelf;
     var colors = swatchColors();
+    var used = shelf.map(function (c) { return c.color; });
+    var free = colors.filter(function (hex) { return used.indexOf(hex) < 0; });
     var c = { key: uid(), label: NEW_COLUMN,
-      color: colors[shelf.length % colors.length] };
+      color: (free.length ? free : colors)[0] };
     shelf.push(c);
     here().cols[c.key] = [];
     commit();
@@ -2624,9 +2659,43 @@
   function removeColumn(key) {
     var board = here();
     var c = colOf(key);
-    board.shelf.splice(board.shelf.indexOf(c), 1);
+    liftColumn(board.shelf, c);
     delete board.cols[key];
     discard(c.label + ' removed');
+  }
+
+  function liftColumn(shelf, c) {
+    var at = shelf.indexOf(c);
+    var next = shelf[at + 1];
+    if (next && next.under && !c.under) next.under = false;
+    shelf.splice(at, 1);
+  }
+
+  function columnSide(column, e) {
+    var box = column.getBoundingClientRect();
+    var x = (e.clientX - box.left) / box.width;
+    if (x < 0.25) return 'left';
+    if (x > 0.75) return 'right';
+    return e.clientY < box.top + box.height / 2 ? 'above' : 'below';
+  }
+
+  function placeColumn(shelf, moving, target, side) {
+    var at = shelf.indexOf(target);
+    if (side === 'above') {
+      moving.under = !!target.under;
+      target.under = true;
+      shelf.splice(at, 0, moving);
+      return;
+    }
+    if (side === 'below') {
+      moving.under = true;
+      shelf.splice(at + 1, 0, moving);
+      return;
+    }
+    while (side === 'left' && shelf[at].under) at--;
+    while (side === 'right' && shelf[at + 1] && shelf[at + 1].under) at++;
+    moving.under = false;
+    shelf.splice(side === 'left' ? at : at + 1, 0, moving);
   }
 
   function swatchColors() {
@@ -2667,22 +2736,31 @@
     head.addEventListener('dragend', function () {
       drag = null;
       column.classList.remove('dragging');
+      board.querySelectorAll('[data-drop]').forEach(function (c) {
+        c.removeAttribute('data-drop');
+      });
     });
+    function unmark() {
+      column.removeAttribute('data-drop');
+    }
     column.addEventListener('dragover', function (e) {
-      if (!dragged('column')) return;
+      var id = dragged('column');
+      if (!id || id === key) return;
       e.preventDefault();
+      column.dataset.drop = columnSide(column, e);
+    });
+    column.addEventListener('dragleave', function (e) {
+      if (!column.contains(e.relatedTarget)) unmark();
     });
     column.addEventListener('drop', function (e) {
       var id = dragged('column');
       if (!id || id === key) return;
       e.preventDefault();
+      unmark();
       var shelf = here().shelf;
       var moving = colOf(id);
-      shelf.splice(shelf.indexOf(moving), 1);
-      var box = column.getBoundingClientRect();
-      var at = shelf.indexOf(colOf(key));
-      shelf.splice(e.clientX > box.left + box.width / 2 ? at + 1 : at, 0,
-        moving);
+      liftColumn(shelf, moving);
+      placeColumn(shelf, moving, colOf(key), columnSide(column, e));
       commit();
     });
   }
@@ -4624,7 +4702,7 @@
           + '"]'), notesBody);
       }, NOTE_WAIT);
     } else {
-      frameAround(node, board);
+      frameAround(node, document.body);
     }
     if (said.length) {
       var s = said.join(', ');
@@ -4836,12 +4914,36 @@
     });
   }
 
+  function homeTitle(heading, name) {
+    var words = name.split(' ');
+    heading.appendChild(document.createTextNode(words[0] + ' '));
+    var pick = textBtn('home-pick', words[1]);
+    pick.setAttribute('aria-haspopup', 'true');
+    pick.setAttribute('aria-expanded', 'false');
+    pick.appendChild(icon('chev'));
+    pick.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var mine = menuOwner === pick;
+      closeMenu();
+      if (mine) return;
+      openMenu(null, pick, Object.keys(HOMES).map(function (k) {
+        return { cls: 'home-' + k, icon: k, title: HOMES[k].name,
+          onClick: function () { switchHome(k); } };
+      }));
+    });
+    heading.appendChild(pick);
+  }
+
   function renderTrail() {
     var heading = document.getElementById('trail');
     var all = steps(path);
     heading.textContent = '';
     all.forEach(function (step, i) {
       if (i) heading.appendChild(el('span', 'trail-sep', ' / '));
+      if (i === all.length - 1 && !i) {
+        homeTitle(heading, step.name);
+        return;
+      }
       if (i === all.length - 1) {
         fillCode(heading, step.name);
         return;
@@ -5605,6 +5707,10 @@
   document.addEventListener('click', function (e) {
     if (!palPanel.contains(e.target) && e.target !== palBtn) closePalette();
     if (!menu.contains(e.target)) closeMenu();
+    if (openSwatches && !openSwatches.contains(e.target)) {
+      openSwatches.hidden = true;
+      openSwatches = null;
+    }
   });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
@@ -5626,16 +5732,11 @@
   function show() {
     applyPalette(here().palette, here().turn);
     palBtn.parentNode.hidden = !!here().shelf;
-    homeSwitch.querySelectorAll('button').forEach(function (b) {
-      b.setAttribute('aria-pressed', b.dataset.home === home ? 'true' : 'false');
-    });
     render();
   }
 
-  var homeSwitch = document.getElementById('homeSwitch');
-  homeSwitch.addEventListener('click', function (e) {
-    var to = e.target.dataset.home;
-    if (!to || to === home) return;
+  function switchHome(to) {
+    if (to === home) return;
     stacks[home] = { undos: undos, redos: redos };
     home = to;
     lsSet(HOME_KEY, home);
@@ -5647,7 +5748,7 @@
     path = [];
     enter(path);
     show();
-  });
+  }
 
   var toolbar = document.getElementById('toolbar');
   var markStuck = function () {

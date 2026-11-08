@@ -2716,8 +2716,9 @@ test('the shelf is a second home that starts empty and keeps its own cards',
         { id: 'b', text: 'on the board', created: 1 }], now: [],
         accomplished: [] } });
       await page.go();
-      await page.run('document.querySelector(\'#homeSwitch'
-        + ' [data-home="shelf"]\').click()');
+      await page.run('document.querySelector(\'.home-pick\').click()');
+      await page.run('document.querySelector(\'.card-menu'
+        + ' .home-shelf\').click()');
       const empty = await page.run(call(shelfCols));
       const palette = await page.run(
         'document.querySelector(".palette-wrap").hidden');
@@ -2725,8 +2726,9 @@ test('the shelf is a second home that starts empty and keeps its own cards',
       const shelf = await stored(page, SHELF);
       await page.go();
       const back = await page.run(call(shelfCols));
-      await page.run('document.querySelector(\'#homeSwitch'
-        + ' [data-home="board"]\').click()');
+      await page.run('document.querySelector(\'.home-pick\').click()');
+      await page.run('document.querySelector(\'.card-menu'
+        + ' .home-board\').click()');
       const board = await page.run(call(shelfCols));
       return { empty, palette, labels: shelf.shelf.map((c) => c.label),
         back, board, kept: (await stored(page, STORE)).cols.backlog.length };
@@ -2754,6 +2756,8 @@ test('a shelf column renames, takes a colour, moves, clears and goes',
         + ' i.value = "Stews"; i.dispatchEvent(new KeyboardEvent("keydown",'
         + ' { key: "Enter", bubbles: true }))');
       await page.run('document.querySelector(\'.col[data-col="a"]'
+        + ' .menubtn\').click()');
+      await page.run('document.querySelector(\'.card-menu'
         + ' .colcolor\').click()');
       const pick = await page.run('document.querySelectorAll('
         + '\'.col[data-col="a"] .swatch\')[3].dataset.color');
@@ -2777,6 +2781,8 @@ test('a shelf column renames, takes a colour, moves, clears and goes',
       out.clearable = await page.run('document.querySelectorAll('
         + '"#board .col .clearbtn").length');
       await page.run('document.querySelector(\'.col[data-col="b"]'
+        + ' .menubtn\').click()');
+      await page.run('document.querySelector(\'.card-menu'
         + ' .coldel\').click()');
       const gone = await stored(page, SHELF);
       out.left = gone.shelf.map((c) => c.label);
@@ -2787,6 +2793,50 @@ test('a shelf column renames, takes a colour, moves, clears and goes',
     assert.deepStrictEqual(seen, {
       first: ['Soups', 'Cakes'], moved: ['Cakes', 'Stews'], color: true,
       clearable: 2, left: ['Stews'], cards: ['a'] });
+  });
+
+test('a shelf column drops above, below or beside another column',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await page.run('localStorage.setItem("mother.home.v1", "shelf")');
+      await seed(page, SHELF, { shelf: ['a', 'b', 'c'].map((k) =>
+        ({ key: k, label: k, color: '#cc785c' })),
+      cols: { a: [], b: [], c: [] } });
+      await page.go();
+      const stacks = () => page.run(call(function () {
+        return Array.from(document.querySelectorAll('#board .stack'))
+          .map((s) => Array.from(s.querySelectorAll('h2'))
+            .map((h) => h.textContent).join(''));
+      }));
+      const move = (from, to, fx, fy) => page.run(call(function (f, t, x, y) {
+        const col = (k) => document.querySelector('.col[data-col="' + k
+          + '"]');
+        const box = col(t).getBoundingClientRect();
+        const at = { bubbles: true, cancelable: true,
+          clientX: box.left + box.width * x,
+          clientY: box.top + box.height * y,
+          dataTransfer: new DataTransfer() };
+        const head = col(f).querySelector('.col-head');
+        head.dispatchEvent(new DragEvent('dragstart', at));
+        col(t).dispatchEvent(new DragEvent('dragover', at));
+        col(t).dispatchEvent(new DragEvent('drop', at));
+        head.dispatchEvent(new DragEvent('dragend', at));
+      }, from, to, fx, fy));
+      const out = { first: await stacks() };
+      await move('c', 'a', 0.5, 0.9);
+      out.below = await stacks();
+      await move('b', 'a', 0.5, 0.1);
+      out.above = await stacks();
+      await move('a', 'c', 0.9, 0.5);
+      out.beside = await stacks();
+      await page.go();
+      out.kept = await stacks();
+      return out;
+    });
+
+    assert.deepStrictEqual(seen, {
+      first: ['a', 'b', 'c'], below: ['ac', 'b'], above: ['bac'],
+      beside: ['bc', 'a'], kept: ['bc', 'a'] });
   });
 
 test('a board card can hold a shelf and a shelf card can hold a board',
