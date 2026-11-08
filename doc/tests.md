@@ -152,4 +152,6 @@ The list follows the sequence of the tests in the file.
 
 - `export saves both homes in one file and import brings both back`: it makes sure that **Download both homes** writes the two homes to one zip, and that an import of that zip puts back the two homes.
 
+- `a shelf column folds by a chevron and its search rows have no mark`: it makes sure that a column on a shelf shows a chevron in front of its name, and that a click on the chevron folds the column. It also makes sure that no column on the board shows the chevron. It then makes sure that a search result from the board shows the mark of its column, and that a search result from the shelf shows no mark.
+
 The tests examine the checksum of each file that they read from a zip. For more information, refer to [behaviour.md](behaviour.md#storage).

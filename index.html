@@ -518,6 +518,8 @@
     cursor: pointer;
   }
   .colfold:hover { background: rgba(20, 20, 19, 0.08); }
+  .board.shelf .colfold .glyph { transition: transform 120ms ease; }
+  .board.shelf .col:not(.folded) .colfold .glyph { transform: rotate(90deg); }
   .col.folded { min-height: 0; }
   .col.folded > :not(.col-head) { display: none; }
   .col.folded .col-head { border-bottom: 0; }
@@ -1798,7 +1800,7 @@
     board: { store: STORE, name: 'Mother Board' },
     shelf: { store: SHELF_STORE, name: 'Mother Shelf' }
   };
-  var SHELF_MARK = 'mise';
+  var SHELF_FOLD = 'chev';
   var SHELF_PROMPT = 'What goes here?';
   var NEW_COLUMN = 'New column';
   var PAL_KEY = 'personal.palette.v1';
@@ -2522,7 +2524,7 @@
 
     var head = el('div', 'col-head');
     var fold = textBtn('colfold');
-    fold.appendChild(icon(c.mark || SHELF_MARK));
+    fold.appendChild(icon(c.mark || SHELF_FOLD));
     fold.addEventListener('click', function () {
       var board = here();
       var was = board.folded || [];
@@ -4580,7 +4582,7 @@
     row.setAttribute('aria-selected', i === hitAt ? 'true' : 'false');
     row.dataset.hit = hit.note || hit.file || hit.card.id;
     row.dataset.at = i;
-    row.appendChild(icon(hit.glyph));
+    row.appendChild(hit.glyph ? icon(hit.glyph) : el('span', 'glyph'));
     var main = el('span', 'hit-main');
     markTerms(main.appendChild(el('span', hit.file ? 'hit-text mono'
       : 'hit-text')), snippetOf(hit.words, left), left);
@@ -4766,7 +4768,7 @@
       : (item.pinned ? ' · pinned' : '') + (item.low ? ' · low' : '');
     out.push(seekHit(where, item, {
       glyph: item.board ? 'board' : where.head ? 'deck'
-        : colOf(where.col, where.home).mark || SHELF_MARK,
+        : colOf(where.col, where.home).mark,
       words: seen.words, links: seen.links, time: item.created,
       where: kind + ' · ' + col + more }));
     item.notes.forEach(function (note) {

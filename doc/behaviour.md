@@ -266,6 +266,7 @@ The book holds 108 combinations of four colours. 24 of them are here, in eight f
 - Each board keeps its own folds. If you fold Backlog on the Mother Board, Backlog stays open on the boards inside it.
 - The fold is on the board, so it stays after a reload, travels with Export and shows in another tab.
 - A fold is not a step. Ctrl+Z does not take it back, and Ctrl+Z on a different change keeps the column folded or open.
+- On a shelf, the mark is a chevron. It points down while the column is open and to the right while it is folded. A column on a shelf has no mark of its own, so a search result from a shelf shows no mark in front of it.
 - Search opens a folded column when it takes you to a card in it. The column stays open. Search, above, has the rest.
 
 ## The Remember column

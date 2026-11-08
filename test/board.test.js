@@ -2959,3 +2959,46 @@ test('export saves both homes in one file and import brings both back',
     assert.deepStrictEqual(Object.keys(homes).sort(), ['board', 'shelf']);
     assert.deepStrictEqual(back, { board: 'on the board', shelf: 'fasolada' });
   });
+
+function foldMarks() {
+  return Array.from(document.querySelectorAll('#board .colfold path'))
+    .map((p) => p.getAttribute('d'));
+}
+
+function hitMarks() {
+  return Array.from(document.querySelectorAll('#findList .hit'))
+    .map((h) => h.querySelectorAll('path').length);
+}
+
+test('a shelf column folds by a chevron and its search rows have no mark',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [], backlog: [
+          { id: 'b', text: 'soup on the board', created: 1 }] } });
+      await seed(page, SHELF, { shelf: [
+        { key: 'a', label: 'Soups', color: '#cc785c' }],
+      cols: { a: [{ id: 's', text: 'soup on the shelf', created: 1 }] } });
+      await page.go();
+      const out = { board: await page.run(call(foldMarks)) };
+      await page.run(call(keyIn, 'body', '/'));
+      await page.run(call(searchFor, 'soup'));
+      out.boardHits = await page.run(call(hitMarks));
+      await page.run('localStorage.setItem("mother.home.v1", "shelf")');
+      await page.go();
+      out.shelf = await page.run(call(foldMarks));
+      await page.run(foldOf('a'));
+      out.folded = await page.run(call(partsShown, 'a'));
+      await page.run(call(keyIn, 'body', '/'));
+      await page.run(call(searchFor, 'soup'));
+      out.shelfHits = await page.run(call(hitMarks));
+      return out;
+    });
+
+    const chev = 'M9 6l6 6-6 6';
+    assert.strictEqual(seen.board.includes(chev), false);
+    assert.deepStrictEqual(seen.shelf, [chev]);
+    assert.deepStrictEqual(seen.folded, ['col-head']);
+    assert.deepStrictEqual(seen.boardHits, [1]);
+    assert.deepStrictEqual(seen.shelfHits, [0]);
+  });
