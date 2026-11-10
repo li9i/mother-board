@@ -92,7 +92,8 @@
 
   .composer textarea,
   .card textarea,
-  .notes-edit {
+  .notes-edit,
+  .link-ask {
     width: 100%;
     resize: vertical;
     background: var(--white);
@@ -1417,6 +1418,12 @@
     padding: 8px 9px;
   }
   .notes-edit.on { display: block; }
+  .link-ask {
+    margin-top: 6px;
+    border: 1.5px solid var(--clay);
+    border-radius: 6px;
+    padding: 5px 8px;
+  }
   .tips-close {
     flex: none;
     --side: 22px;
@@ -2398,6 +2405,7 @@
     host.appendChild(add);
     host.appendChild(box);
     takeFiles(ta, function () { return []; });
+    takeLinks(ta);
 
     function open() {
       closeComposers();
@@ -3341,6 +3349,7 @@
     card.draggable = false;
     card.replaceChild(ta, text);
     takeFiles(ta, function () { return item.files; });
+    takeLinks(ta);
 
     function fit() {
       ta.style.height = 'auto';
@@ -3372,7 +3381,9 @@
       if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); finish(true); }
       else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
     });
-    ta.addEventListener('blur', function () { finish(true); });
+    ta.addEventListener('blur', function () {
+      if (!ta.asking) finish(true);
+    });
   }
 
   var attachInput = document.getElementById('attachInput');
@@ -3482,6 +3493,39 @@
     })).then(function () { return metas; });
   }
 
+  function askLink(ta, from, to) {
+    var input = el('input', 'link-ask');
+    input.placeholder = 'link address, then Enter';
+    ta.asking = true;
+    ta.parentNode.insertBefore(input, ta.nextSibling);
+    input.focus();
+    var done = false;
+    function finish(url, back) {
+      if (done) return;
+      done = true;
+      if (url) {
+        var words = ta.value.slice(from, to);
+        ta.setRangeText('[' + words + '](' + url + ')', from, to, 'end');
+        ta.dispatchEvent(new Event('input'));
+      }
+      if (back) ta.focus();
+      input.remove();
+      ta.asking = false;
+      if (!back) ta.dispatchEvent(new Event('blur'));
+    }
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        finish(input.value.trim(), true);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        finish('', true);
+      }
+    });
+    input.addEventListener('blur', function () { finish('', false); });
+  }
+
   function takeFiles(ta, owned) {
     ta.waiting = [];
     ta.waitRow = el('div', 'files');
@@ -3511,6 +3555,15 @@
       addWaiting(ta, files.filter(function (f) {
         return pictures.indexOf(f) < 0;
       }));
+    });
+  }
+
+  function takeLinks(ta) {
+    ta.addEventListener('keydown', function (e) {
+      if (!e.ctrlKey || e.key !== 'k') return;
+      e.preventDefault();
+      if (ta.selectionStart === ta.selectionEnd) return;
+      askLink(ta, ta.selectionStart, ta.selectionEnd);
     });
   }
 
@@ -4342,6 +4395,7 @@
 
   notesWhat.parentNode.appendChild(whatEdit);
   takeFiles(whatEdit, function () { return find(openCardId).card.files; });
+  takeLinks(whatEdit);
   var notesFiles = el('div');
   notesWhat.parentNode.appendChild(notesFiles);
 
@@ -4484,7 +4538,9 @@
     editWhat();
   });
   whatEdit.addEventListener('input', fitWhat);
-  whatEdit.addEventListener('blur', function () { finishWhat(true); });
+  whatEdit.addEventListener('blur', function () {
+    if (!whatEdit.asking) finishWhat(true);
+  });
   whatEdit.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && e.ctrlKey) {
       e.preventDefault();
@@ -4990,8 +5046,7 @@
   document.addEventListener('keydown', function (e) {
     var slash = e.key === '/' && !e.ctrlKey && !e.metaKey
       && !e.target.closest('textarea, input');
-    var ctrlK = (e.ctrlKey || e.metaKey) && e.key === 'k';
-    if (!slash && !ctrlK) return;
+    if (!slash) return;
     e.preventDefault();
     openFinder();
   });

@@ -49,6 +49,8 @@ A card in a column can have a title. **Add a title** in the menu of the card ope
 
 Nothing else is a link. A `javascript:` address is not a link. An address inside backticks is code, not a link. The card keeps the text you typed, so you see it again when you edit the card.
 
+To put a link behind words, select the words in a box where you write and press Ctrl+K. A small box for the address opens below. Type the address and press Enter. The words become `[words](address)`, and the box where you write stays open. Escape closes the small box and keeps the text as it was. A click outside it does the same. With no words selected, Ctrl+K does nothing. The boxes are the box for a new card or a new note, the box that a double click opens, and the box for the text of a card in the notes window.
+
 **Markdown**: the board reads some of the Markdown marks. A mark must hold text and stay on one line. The card keeps the marks you typed, so you see them again when you edit the card.
 
 - Inside a line, `**bold**`, `*italic*` and `~~struck through~~` mark the words between them. Bold and italic need asterisks. The board does not read the underscore as a mark, so a name such as `max_speed` stays as it is.
@@ -191,7 +193,7 @@ A shelf is a second kind of board. A board has the four fixed columns. A shelf s
 
 ## Search
 
-The **/** key opens a window where you type what you look for, and so does Ctrl+K. The hint line under the heading names the key. Escape or a click outside closes the window.
+The **/** key opens a window where you type what you look for. Ctrl+K does not open it, because Ctrl+K puts a link behind selected words. The hint line under the heading names the key. Escape or a click outside closes the window.
 
 - Search looks in every board of the home that you are in, at once. It looks in the title and the text of each card, and in the text of each note, as the card shows it. It also looks in the names of files and boards, and in the address behind a link that shows only its words. The marks in the text, such as `**` or `- [ ]`, are not part of the search.
 - A date matches only when you type it in full, as the card shows it, such as `Oct 6`. It can also be in quotes. Then search finds the cards and notes that you wrote on that day. A part of a date, such as `oct` or `6`, does not find a card by its date.

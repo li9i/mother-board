@@ -1649,6 +1649,65 @@ test('a picture dropped on a card or in its edit box lands in the text',
     assert.deepStrictEqual(seen.shownAfter, [PIC_SHOWN, PIC_SHOWN]);
   });
 
+const LINK_ASK = '#notes input.link-ask';
+
+function isThere(selector) {
+  return !!document.querySelector(selector);
+}
+
+function selectIn(selector, from, to) {
+  const box = document.querySelector(selector);
+  box.focus();
+  box.setSelectionRange(from, to);
+}
+
+test('ctrl k puts a link behind the selected words', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, withLists('Buy new shoes', COLOURS));
+    await page.go();
+    const box = WHAT_EDIT;
+    const out = {};
+    await page.run(call(editCard, 'a'));
+    await page.run(call(selectIn, box, 4, 4));
+    out.bare = await page.run(call(ctrlIn, box, 'k'));
+    out.bareAsk = await page.run(call(isThere, LINK_ASK));
+    await page.run(call(selectIn, box, 4, 13));
+    out.taken = await page.run(call(ctrlIn, box, 'k'));
+    out.asked = await page.run('document.activeElement.matches('
+      + JSON.stringify(LINK_ASK) + ')');
+    await page.run(call(keyIn, LINK_ASK, 'Escape'));
+    out.kept = await page.run(call(valueOf, box));
+    out.stillEditing = await page.run(call(isThere, box + ':focus'));
+    await page.run(call(selectIn, box, 4, 13));
+    await page.run(call(ctrlIn, box, 'k'));
+    await page.run(call(setValue, LINK_ASK, 'https://shoes.example'));
+    await page.run(call(keyIn, LINK_ASK, 'Enter'));
+    out.linked = await page.run(call(valueOf, box));
+    out.askGone = !(await page.run(call(isThere, LINK_ASK)));
+    out.caret = await page.run('document.querySelector('
+      + JSON.stringify(box) + ').selectionStart');
+    await page.run(call(keyIn, box, 'Enter', true));
+    out.saved = cardA(await stored(page, STORE)).text;
+    out.finder = await page.run(call(finderOpen));
+    return out;
+  });
+
+  const text = 'Buy [new shoes](https://shoes.example)';
+  assert.deepStrictEqual(seen, {
+    bare: true,
+    bareAsk: false,
+    taken: true,
+    asked: true,
+    kept: 'Buy new shoes',
+    stillEditing: true,
+    linked: text,
+    askGone: true,
+    caret: text.length,
+    saved: text,
+    finder: false
+  });
+});
+
 test('a picture pasted in the box for a new card or note comes with it',
   async () => {
     const seen = await inPage(async (page) => {
@@ -2430,8 +2489,7 @@ test('search finds cards, notes, decks, files, links and dates on every board',
       shown.here = await page.run(call(searchFor, 'van'));
       await page.run(call(keyIn, '#findInput', 'Escape'));
       shown.byEscape = await page.run(call(finderOpen));
-      await page.run(call(ctrlIn, 'body', 'k'));
-      shown.byCtrlK = await page.run(call(finderOpen));
+      shown.byCtrlK = await page.run(call(ctrlIn, 'body', 'k'));
       return shown;
     });
 
@@ -2445,7 +2503,7 @@ test('search finds cards, notes, decks, files, links and dates on every board',
       marks: [],
       here: ['a', 'f1', 'hn', 'd'],
       byEscape: false,
-      byCtrlK: true
+      byCtrlK: false
     });
   });
 
